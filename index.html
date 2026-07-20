@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Academia Click Agro</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #1f2933; background: #f3f8f2; line-height: 1.6; }
+    header { background: #ffffff; padding: 18px 8%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 10; }
+    .logo { font-weight: 800; color: #166534; font-size: 22px; }
+    .logo span { display: block; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #65a30d; }
+    .btn { display: inline-block; background: #166534; color: white; padding: 14px 22px; border-radius: 14px; text-decoration: none; font-weight: 700; }
+    .btn:hover { background: #14532d; }
+    .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; padding: 80px 8%; align-items: center; }
+    .badge { display: inline-block; background: #dcfce7; color: #166534; padding: 8px 14px; border-radius: 999px; font-weight: 700; margin-bottom: 20px; }
+    h1 { font-size: 48px; line-height: 1.1; margin-bottom: 24px; }
+    h2 { font-size: 34px; line-height: 1.2; margin-bottom: 18px; }
+    p { font-size: 18px; color: #4b5563; }
+    .hero-card { background: #14532d; color: white; padding: 40px; border-radius: 32px; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
+    .hero-card p { color: #e5f6df; }
+    .checks { margin-top: 25px; display: grid; gap: 12px; }
+    .check { background: rgba(255,255,255,.12); padding: 14px; border-radius: 16px; font-weight: 700; }
+    section { padding: 70px 8%; }
+    .white { background: white; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 35px; }
+    .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 35px; }
+    .card { background: white; padding: 28px; border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,.08); }
+    .card h3 { color: #166534; margin-bottom: 10px; font-size: 22px; }
+    .course { background: white; padding: 22px; border-radius: 22px; box-shadow: 0 8px 22px rgba(0,0,0,.07); font-weight: 800; }
+    .dark { background: #14532d; color: white; }
+    .dark p { color: #e5f6df; }
+    .cta { background: #d9f99d; text-align: center; border-radius: 35px; padding: 50px; max-width: 950px; margin: auto; }
+    .cta p { max-width: 720px; margin: 0 auto 28px; }
+    footer { background: white; text-align: center; padding: 30px; color: #6b7280; border-top: 1px solid #e5e7eb; }
+    @media (max-width: 900px) {
+      header { flex-direction: column; gap: 14px; text-align: center; }
+      .hero { grid-template-columns: 1fr; padding-top: 50px; }
+      h1 { font-size: 36px; }
+      h2 { font-size: 28px; }
+      .grid3, .grid4 { grid-template-columns: 1fr; }
+      section { padding: 50px 6%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    Click Agro
+    <span>Academia de Educación</span>
+  </div>
+  <a class="btn" href="https://wa.me/5492344565168" target="_blank">Consultar por WhatsApp</a>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <div class="badge">Formación práctica para el agro real</div>
+      <h1>Capacitación simple, práctica y aplicable para productores, contratistas y equipos rurales.</h1>
+      <p>
+        En la Academia de Educación de Click Agro acercamos herramientas concretas para mejorar la gestión,
+        la administración, la documentación, el financiamiento y la toma de decisiones en el campo.
+      </p>
+      <br>
+      <a class="btn" href="https://wa.me/5492344565168" target="_blank">Quiero recibir información</a>
+    </div>
+
+    <div class="hero-card">
+      <h2>Aprendé lo que necesitás para ordenar y hacer crecer tu actividad agropecuaria.</h2>
+      <p>Capacitaciones claras, directas y pensadas para aplicar desde el primer día.</p>
+      <div class="checks">
+        <div class="check">✓ Cursos cortos y prácticos</div>
+        <div class="check">✓ Capacitaciones online</div>
+        <div class="check">✓ Herramientas para gestión agro</div>
+        <div class="check">✓ Acompañamiento comercial y financiero</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="white">
+    <p class="badge">¿Para quién es?</p>
+    <h2>Para quienes trabajan en el agro y necesitan soluciones concretas.</h2>
+
+    <div class="grid3">
+      <div class="card">
+        <h3>Productores</h3>
+        <p>Para ordenar números, documentación, inversiones y decisiones de campaña.</p>
+      </div>
+      <div class="card">
+        <h3>Contratistas</h3>
+        <p>Para profesionalizar la gestión, calcular costos y mejorar la rentabilidad.</p>
+      </div>
+      <div class="card">
+        <h3>Equipos rurales</h3>
+        <p>Para capacitar personal, representantes y colaboradores del sector.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="badge">Capacitaciones</p>
+    <h2>Temas que transforman la gestión del campo.</h2>
+
+    <div class="grid4">
+      <div class="course">Costos agropecuarios</div>
+      <div class="course">Financiamiento para el agro</div>
+      <div class="course">Documentación y habilitaciones</div>
+      <div class="course">Gestión de contratistas</div>
+      <div class="course">Administración rural</div>
+      <div class="course">Herramientas digitales</div>
+      <div class="course">Seguros y riesgos</div>
+      <div class="course">Rentabilidad y caja</div>
+    </div>
+  </section>
+
+  <section class="dark">
+    <h2>Metodología Click Agro</h2>
+    <p>
+      Lenguaje simple, ejemplos reales del sector agropecuario, material de apoyo y orientación para tomar mejores decisiones.
+    </p>
+  </section>
+
+  <section>
+    <div class="cta">
+      <h2>¿Querés capacitarte o sumar la Academia Click Agro a tu zona?</h2>
+      <p>
+        Escribinos y te enviamos información sobre cursos disponibles, fechas, modalidad y propuestas para productores,
+        contratistas, empresas y representantes regionales.
+      </p>
+      <a class="btn" href="https://wa.me/5492344565168" target="_blank">Escribir a Click Agro por WhatsApp</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  © Click Agro · Academia de Educación | Capacitación, gestión y soluciones para el agro.
+</footer>
+
+</body>
+</html>
