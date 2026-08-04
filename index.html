@@ -33,6 +33,7 @@
     .cta { background: #d9f99d; text-align: center; border-radius: 35px; padding: 50px; max-width: 950px; margin: auto; }
     .cta p { max-width: 720px; margin: 0 auto 28px; }
     footer { background: white; text-align: center; padding: 30px; color: #6b7280; border-top: 1px solid #e5e7eb; }
+    .img-cursos-wrap { text-align: center; }
     @media (max-width: 900px) {
       header { flex-direction: column; gap: 14px; text-align: center; }
       .hero { grid-template-columns: 1fr; padding-top: 50px; }
@@ -40,6 +41,8 @@
       h2 { font-size: 28px; }
       .grid3, .grid4 { grid-template-columns: 1fr; }
       section { padding: 50px 6%; }
+      .seccion-cursos { padding-left: 0 !important; padding-right: 0 !important; }
+      .img-cursos { width: 100% !important; border-radius: 0 !important; box-shadow: none !important; }
     }
   </style>
 </head>
@@ -98,8 +101,10 @@
     </div>
   </section>
 
-  <section style="text-align: center;">
-    <img src="imagenes/cursos.png" alt="Cursos disponibles" style="max-width: 100%; height: auto; border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,.08);" />
+  <section class="seccion-cursos" style="text-align: center;">
+    <div class="img-cursos-wrap">
+      <img src="imagenes/cursos.png" alt="Cursos disponibles" class="img-cursos" style="max-width: 100%; height: auto; border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,.08);" />
+    </div>
   </section>
 
   <section class="dark">
