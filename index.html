@@ -3,7 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Academia Click Agro</title>
+
+  <!-- ===================== SEO META TAGS ===================== -->
+  <title>Cursos Online de Gestión Agropecuaria | Academia Click Agro</title>
+  <meta name="description" content="Capacitaciones prácticas para productores, contratistas y equipos rurales. Cursos online de gestión agro, administración rural y toma de decisiones en el campo." />
+  <meta name="keywords" content="cursos agropecuarios online, capacitación rural, gestión agro, academia click agro, cursos para productores, contratistas rurales, educación agropecuaria argentina" />
+  <meta name="author" content="Academia Click Agro" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+
+  <!-- ===================== CANONICAL ===================== -->
+  <link rel="canonical" href="https://academiaclickagro-creator.github.io/pagina/" />
+
+  <!-- ===================== OPEN GRAPH (Facebook / WhatsApp) ===================== -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="es_AR" />
+  <meta property="og:site_name" content="Academia Click Agro" />
+  <meta property="og:title" content="Cursos Online de Gestión Agropecuaria | Academia Click Agro" />
+  <meta property="og:description" content="Capacitaciones prácticas para productores, contratistas y equipos rurales. Cursos online de gestión agro y administración rural." />
+  <meta property="og:url" content="https://academiaclickagro-creator.github.io/pagina/" />
+  <meta property="og:image" content="https://academiaclickagro-creator.github.io/pagina/imagenes/cursos.png" />
+  <meta property="og:image:alt" content="Cursos de gestión agropecuaria - Academia Click Agro" />
+
+  <!-- ===================== TWITTER CARD ===================== -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Cursos Online de Gestión Agropecuaria | Academia Click Agro" />
+  <meta name="twitter:description" content="Capacitaciones prácticas para productores, contratistas y equipos rurales." />
+  <meta name="twitter:image" content="https://academiaclickagro-creator.github.io/pagina/imagenes/cursos.png" />
+
+  <!-- ===================== FAVICON ===================== -->
+  <link rel="icon" type="image/png" href="imagenes/cursos.png" />
+
+  <!-- ===================== PRECONNECT (performance) ===================== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="image" href="imagenes/cursos.png" />
+
+  <!-- ===================== SCHEMA JSON-LD ===================== -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": "Academia Click Agro",
+    "description": "Academia de capacitación online para el sector agropecuario. Cursos de gestión, administración rural y toma de decisiones para productores y contratistas.",
+    "url": "https://academiaclickagro-creator.github.io/pagina/",
+    "logo": "https://academiaclickagro-creator.github.io/pagina/imagenes/cursos.png",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer service",
+      "telephone": "+54-9-2344-565168",
+      "contactOption": "TollFree",
+      "availableLanguage": "Spanish",
+      "url": "https://wa.me/5492344565168"
+    },
+    "areaServed": {
+      "@type": "Country",
+      "name": "Argentina"
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "Course",
+          "name": "Cursos cortos y prácticos de gestión agropecuaria",
+          "description": "Capacitaciones online para productores, contratistas y equipos rurales sobre gestión, administración y financiamiento agropecuario.",
+          "provider": {
+            "@type": "Organization",
+            "name": "Academia Click Agro"
+          },
+          "educationalLevel": "Beginner to Intermediate",
+          "inLanguage": "es"
+        },
+        "availability": "https://schema.org/InStock",
+        "priceCurrency": "ARS",
+        "url": "https://wa.me/5492344565168"
+      }
+    ],
+    "sameAs": [
+      "https://wa.me/5492344565168"
+    ]
+  }
+  </script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; color: #1f2933; background: #f3f8f2; line-height: 1.6; }
@@ -16,6 +96,7 @@
     .badge { display: inline-block; background: #dcfce7; color: #166534; padding: 8px 14px; border-radius: 999px; font-weight: 700; margin-bottom: 20px; }
     h1 { font-size: 48px; line-height: 1.1; margin-bottom: 24px; }
     h2 { font-size: 34px; line-height: 1.2; margin-bottom: 18px; }
+    h3 { font-size: 22px; }
     p { font-size: 18px; color: #4b5563; }
     .hero-card { background: #14532d; color: white; padding: 40px; border-radius: 32px; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
     .hero-card p { color: #e5f6df; }
@@ -26,13 +107,15 @@
     .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 35px; }
     .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 35px; }
     .card { background: white; padding: 28px; border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,.08); }
-    .card h3 { color: #166534; margin-bottom: 10px; font-size: 22px; }
+    .card h3 { color: #166534; margin-bottom: 10px; }
     .course { background: white; padding: 22px; border-radius: 22px; box-shadow: 0 8px 22px rgba(0,0,0,.07); font-weight: 800; }
     .dark { background: #14532d; color: white; }
     .dark p { color: #e5f6df; }
     .cta { background: #d9f99d; text-align: center; border-radius: 35px; padding: 50px; max-width: 950px; margin: auto; }
     .cta p { max-width: 720px; margin: 0 auto 28px; }
     footer { background: white; text-align: center; padding: 30px; color: #6b7280; border-top: 1px solid #e5e7eb; }
+    .img-cursos-wrap { text-align: center; }
+    /* ── Responsive ── */
     @media (max-width: 900px) {
       header { flex-direction: column; gap: 14px; text-align: center; }
       .hero { grid-template-columns: 1fr; padding-top: 50px; }
@@ -40,89 +123,108 @@
       h2 { font-size: 28px; }
       .grid3, .grid4 { grid-template-columns: 1fr; }
       section { padding: 50px 6%; }
+      .seccion-cursos { padding-left: 0 !important; padding-right: 0 !important; }
+      .img-cursos { width: 100% !important; border-radius: 0 !important; box-shadow: none !important; }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
+<header role="banner">
+  <div class="logo" aria-label="Academia Click Agro">
     Click Agro
     <span>Academia de Educación</span>
   </div>
-  <a class="btn" href="https://wa.me/5492344565168" target="_blank">Consultar por WhatsApp</a>
+  <a class="btn" href="https://wa.me/5492344565168" target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp a Academia Click Agro">Consultar por WhatsApp</a>
 </header>
 
-<main>
-  <section class="hero">
+<main id="contenido-principal">
+
+  <!-- ── HERO ── -->
+  <section class="hero" aria-label="Presentación principal">
     <div>
       <div class="badge">Formación práctica para el agro real</div>
-      <h1>Capacitación simple, práctica y aplicable para productores, contratistas y equipos rurales.</h1>
+      <h1>Capacitación online para productores, contratistas y equipos rurales en Argentina.</h1>
       <p>
         En la Academia de Educación de Click Agro acercamos herramientas concretas para mejorar la gestión,
         la administración, la documentación, el financiamiento y la toma de decisiones en el campo.
       </p>
       <br>
-      <a class="btn" href="https://wa.me/5492344565168" target="_blank">Quiero recibir información</a>
+      <a class="btn" href="https://wa.me/5492344565168" target="_blank" rel="noopener noreferrer" aria-label="Solicitar información sobre cursos agropecuarios">Quiero recibir información</a>
     </div>
 
     <div class="hero-card">
-      <h2>Aprendé lo que necesitás para ordenar y hacer crecer tu actividad agropecuaria.</h2>
+      <h2>Aprendé gestión agropecuaria para ordenar y hacer crecer tu actividad.</h2>
       <p>Capacitaciones claras, directas y pensadas para aplicar desde el primer día.</p>
-      <div class="checks">
-        <div class="check">✓ Cursos cortos y prácticos</div>
-        <div class="check">✓ Capacitaciones online</div>
-        <div class="check">✓ Herramientas para gestión agro</div>
-        <div class="check">✓ Acompañamiento comercial y financiero</div>
+      <div class="checks" role="list" aria-label="Beneficios de la Academia Click Agro">
+        <div class="check" role="listitem">✓ Cursos cortos y prácticos</div>
+        <div class="check" role="listitem">✓ Capacitaciones online</div>
+        <div class="check" role="listitem">✓ Herramientas para gestión agro</div>
+        <div class="check" role="listitem">✓ Acompañamiento comercial y financiero</div>
       </div>
     </div>
   </section>
 
-  <section class="white">
+  <!-- ── PARA QUIÉN ES ── -->
+  <section class="white" aria-labelledby="titulo-publico">
     <p class="badge">¿Para quién es?</p>
-    <h2>Para quienes trabajan en el agro y necesitan soluciones concretas.</h2>
+    <h2 id="titulo-publico">Para quienes trabajan en el agro y necesitan soluciones concretas.</h2>
 
     <div class="grid3">
-      <div class="card">
-        <h3>Productores</h3>
+      <article class="card">
+        <h3>Capacitación para Productores Agropecuarios</h3>
         <p>Para ordenar números, documentación, inversiones y decisiones de campaña.</p>
-      </div>
-      <div class="card">
-        <h3>Contratistas</h3>
+      </article>
+      <article class="card">
+        <h3>Cursos para Contratistas Rurales</h3>
         <p>Para profesionalizar la gestión, calcular costos y mejorar la rentabilidad.</p>
-      </div>
-      <div class="card">
-        <h3>Equipos rurales</h3>
+      </article>
+      <article class="card">
+        <h3>Formación para Equipos Rurales</h3>
         <p>Para capacitar personal, representantes y colaboradores del sector.</p>
-      </div>
+      </article>
     </div>
   </section>
 
-  <section style="text-align: center;">
-    <img src="imagenes/cursos.png" alt="Cursos disponibles" style="max-width: 100%; height: auto; border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,.08);" />
+  <!-- ── IMAGEN CURSOS ── -->
+  <section class="seccion-cursos" style="text-align: center;" aria-label="Catálogo de cursos disponibles">
+    <div class="img-cursos-wrap">
+      <img
+        src="imagenes/cursos.png"
+        alt="Catálogo de cursos online de gestión agropecuaria - Academia Click Agro Argentina"
+        class="img-cursos"
+        style="max-width: 100%; height: auto; border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,.08);"
+        loading="lazy"
+        width="1200"
+        height="630"
+      />
+    </div>
   </section>
 
-  <section class="dark">
-    <h2>Metodología Click Agro</h2>
+  <!-- ── METODOLOGÍA ── -->
+  <section class="dark" aria-labelledby="titulo-metodologia">
+    <h2 id="titulo-metodologia">Metodología Click Agro: Aprendizaje Aplicado al Campo</h2>
     <p>
       Lenguaje simple, ejemplos reales del sector agropecuario, material de apoyo y orientación para tomar mejores decisiones.
     </p>
   </section>
 
-  <section>
+  <!-- ── CTA ── -->
+  <section aria-label="Llamado a la acción">
     <div class="cta">
       <h2>¿Querés capacitarte o sumar la Academia Click Agro a tu zona?</h2>
       <p>
         Escribinos y te enviamos información sobre cursos disponibles, fechas, modalidad y propuestas para productores,
         contratistas, empresas y representantes regionales.
       </p>
-      <a class="btn" href="https://wa.me/5492344565168" target="_blank">Escribir a Click Agro por WhatsApp</a>
+      <a class="btn" href="https://wa.me/5492344565168" target="_blank" rel="noopener noreferrer" aria-label="Contactar a Academia Click Agro por WhatsApp para recibir información de cursos">Escribir a Click Agro por WhatsApp</a>
     </div>
   </section>
+
 </main>
 
-<footer>
-  © Click Agro · Academia de Educación | Capacitación, gestión y soluciones para el agro.
+<footer role="contentinfo">
+  <p>© Click Agro · Academia de Educación | <a href="https://wa.me/5492344565168" target="_blank" rel="noopener noreferrer" style="color:#166534;font-weight:700;">Capacitación, gestión y soluciones para el agro.</a></p>
 </footer>
 
 </body>
