@@ -88,7 +88,10 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; color: #1f2933; background: #f3f8f2; line-height: 1.6; }
     header { background: #ffffff; padding: 18px 8%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 10; }
-    .logo { height: 50px; width: auto; object-fit: contain; }
+    .logo-wrap { display: flex; align-items: center; gap: 12px; }
+    .logo-wrap img { height: 50px; width: auto; object-fit: contain; }
+    .logo-text { font-weight: 800; color: #166534; font-size: 22px; line-height: 1.2; }
+    .logo-text span { display: block; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #65a30d; }
     .btn { display: inline-block; background: #166534; color: white; padding: 14px 22px; border-radius: 14px; text-decoration: none; font-weight: 700; }
     .btn:hover { background: #14532d; }
     .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; padding: 80px 8%; align-items: center; }
@@ -130,7 +133,13 @@
 <body>
 
 <header role="banner">
-  <img src="imagenes/logo.png" alt="Academia Click Agro" class="logo" />
+  <div class="logo-wrap">
+    <img src="imagenes/logo.png" alt="Academia Click Agro" />
+    <div class="logo-text">
+      Click Agro
+      <span>Academia de Educación</span>
+    </div>
+  </div>
   <a class="btn" href="https://wa.me/1123663993" target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp a Academia Click Agro">Consultar por WhatsApp</a>
 </header>
 
