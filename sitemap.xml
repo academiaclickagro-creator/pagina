@@ -12,4 +12,15 @@
       <image:caption>Cursos online para productores, contratistas y equipos rurales de Argentina</image:caption>
     </image:image>
   </url>
+  <url>
+    <loc>https://academiaclickagro-creator.github.io/pagina/agenda-agro-2027.html</loc>
+    <lastmod>2026-09-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://academiaclickagro-creator.github.io/pagina/imagenes/agenda-hero-mockup.jpg</image:loc>
+      <image:title>Agenda Agro 2027 – Gestión Agrícola y Ganadera Digital</image:title>
+      <image:caption>Planificador digital interactivo en PDF para tablets y iPad de Click Agro</image:caption>
+    </image:image>
+  </url>
 </urlset>
