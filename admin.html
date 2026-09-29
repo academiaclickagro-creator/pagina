@@ -1579,7 +1579,7 @@
           <div id="cfg-field-resend" style="display: none;">
             <div class="form-group">
               <label>Resend API Key:</label>
-              <input type="password" id="cfg-resend-key" placeholder="re_123456789..." />
+              <input type="password" id="cfg-resend-key" placeholder="re_123456789..." autocomplete="new-password" />
             </div>
           </div>
 
@@ -1641,6 +1641,9 @@
 
     // Inicialización al cargar la página
     document.addEventListener('DOMContentLoaded', () => {
+      if (typeof initFirebase === 'function') {
+        initFirebase();
+      }
       initAuthObserver();
       setupStorageListener();
     });
@@ -1662,8 +1665,8 @@
         showScreen('screen-login');
       }
 
-      // Intentar vincular observer de Firebase si está disponible
-      if (window.firebase && firebase.auth) {
+      // Intentar vincular observer de Firebase únicamente si la app está inicializada
+      if (window.firebase && firebase.apps && firebase.apps.length > 0 && typeof firebase.auth === 'function') {
         try {
           firebase.auth().onAuthStateChanged((user) => {
             if (user && user.email) {
@@ -1686,7 +1689,7 @@
       if (!isAuthorized) {
         // RECHAZO INMEDIATO DE ACCESO
         console.warn('ACCESO DENEGADO para:', email);
-        if (window.firebase && firebase.auth && firebase.auth().currentUser) {
+        if (window.firebase && firebase.apps && firebase.apps.length > 0 && typeof firebase.auth === 'function' && firebase.auth().currentUser) {
           firebase.auth().signOut().catch(() => {});
         }
         sessionStorage.removeItem('clickagro_admin_session_email');
@@ -1710,7 +1713,7 @@
 
     // Login mediante Google Sign-In (Firebase Popup)
     async function handleGoogleSignIn() {
-      if (window.firebase && firebase.auth) {
+      if (window.firebase && firebase.apps && firebase.apps.length > 0 && typeof firebase.auth === 'function') {
         try {
           const provider = new firebase.auth.GoogleAuthProvider();
           const result = await firebase.auth().signInWithPopup(provider);
@@ -1723,7 +1726,7 @@
         }
       } else {
         // Fallback directo si no está configurada la consola de Firebase
-        const selectedEmail = document.getElementById('quick-auth-email').value;
+        const selectedEmail = document.getElementById('quick-auth-email')?.value || AUTHORIZED_ADMIN_EMAILS[0];
         validateAndGrantAccess(selectedEmail);
       }
     }
@@ -1736,7 +1739,7 @@
 
     // Cerrar sesión
     function handleLogout() {
-      if (window.firebase && firebase.auth && firebase.auth().currentUser) {
+      if (window.firebase && firebase.apps && firebase.apps.length > 0 && typeof firebase.auth === 'function' && firebase.auth().currentUser) {
         firebase.auth().signOut().catch(() => {});
       }
       sessionStorage.removeItem('clickagro_admin_session_email');
