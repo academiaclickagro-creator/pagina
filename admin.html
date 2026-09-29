@@ -1629,9 +1629,9 @@
   </div>
 
   <!-- MODAL DE DESPACHO DE EMAIL PARA AGENDA DIGITAL -->
-  <div id="modal-send-dispatch" class="modal-overlay">
-    <div class="modal-card" style="max-width: 560px;">
-      <div class="modal-header">
+  <div id="modal-send-dispatch" class="admin-modal">
+    <div class="admin-modal-card" style="max-width: 560px;">
+      <div class="modal-head">
         <h3>✉️ Despachar Agenda Agro 2027 Digital</h3>
         <button class="modal-close-icon" onclick="closeModal('modal-send-dispatch')">&times;</button>
       </div>
@@ -2116,6 +2116,10 @@
       }
 
       try {
+        const cfg = (typeof getClickAgroConfig === 'function') ? getClickAgroConfig() : {};
+        const resendApiKey = cfg.emailService?.apiKey || '';
+        const pdfUrl = cfg.pdfUrl || 'https://academiaclickagro.com.ar/agenda/Agenda%20agro%202027.pdf';
+
         // Ejecución de la petición a la API Serverless con Resend
         const resp = await fetch('/api/send-agenda', {
           method: 'POST',
@@ -2125,11 +2129,23 @@
           body: JSON.stringify({
             email: order.email,
             nombre: order.nombre,
-            pedidoId: order.id
+            pedidoId: order.id,
+            apiKey: resendApiKey,
+            pdfUrl: pdfUrl
           })
         });
 
-        const data = await resp.json().catch(() => ({}));
+        let data = {};
+        try {
+          data = await resp.json();
+        } catch (jsonErr) {
+          data = {
+            success: false,
+            error: resp.status === 404 
+              ? 'El endpoint /api/send-agenda no está disponible en este servidor local (requiere entorno Vercel Serverless). Podés usar el despacho por Gmail o WhatsApp.' 
+              : `Respuesta no interpretada del servidor (HTTP ${resp.status}).`
+          };
+        }
 
         if (resp.ok && data.success) {
           // Marcar orden como enviada en el gestor local
@@ -2167,8 +2183,9 @@
 
         } else {
           const errorMsg = (data && data.error) ? data.error : 'No se pudo enviar el correo';
-          showToast(`Error al enviar: ${errorMsg}`, 'error');
-          console.warn('Detalle de error en /api/send-agenda:', data);
+          showToast(`Aviso al enviar: ${errorMsg}`, 'error');
+          console.error('❌ Error en /api/send-agenda ->', errorMsg);
+          console.warn('Detalle de error en /api/send-agenda:', JSON.stringify(data, null, 2), data);
 
           // Si falla, permitir reintentar o enviar manualmente con modal de contingencia
           currentDispatchOrderId = orderId;
@@ -2192,7 +2209,22 @@
         }
       } catch (err) {
         console.error('Error de red al conectar con /api/send-agenda:', err);
-        showToast('Error al conectar con /api/send-agenda. Comprobá tu conexión.', 'error');
+        showToast('Error de conexión con /api/send-agenda. Podés despachar por Gmail o WhatsApp.', 'error');
+        
+        // Modal de contingencia en caso de error de red
+        currentDispatchOrderId = orderId;
+        const emailData = ClickAgroMailer.buildEmailData(order, currentUser);
+        document.getElementById('dispatch-buyer-info').innerHTML = `
+          <strong>${escapeHtml(order.nombre)}</strong> &lt;${escapeHtml(order.email)}&gt;<br>
+          <span style="font-size: 12px; color: #64748b;">Pedido: ${order.id} | Archivo: Agenda agro 2027.pdf</span>
+          <div style="margin-top: 8px; font-size: 12px; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 8px 10px;">
+            ⚠️ <strong>Motivo:</strong> Error al conectar con /api/send-agenda (${escapeHtml(err.message || 'Sin conexión')})
+          </div>
+        `;
+        document.getElementById('btn-dispatch-gmail').href = emailData.gmailUrl;
+        document.getElementById('btn-dispatch-wsp').href = emailData.wspUrl;
+        openModal('modal-send-dispatch');
+
         if (btn) {
           btn.classList.remove('loading');
           btn.disabled = false;
