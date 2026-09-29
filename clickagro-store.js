@@ -261,7 +261,11 @@ async function sendSupabaseRest(endpoint, method, body = null) {
     const res = await fetch(url, options);
     if (!res.ok) {
       const errText = await res.text();
-      console.warn(`Supabase REST [${method} ${endpoint}] Status ${res.status}:`, errText);
+      if (res.status === 404 && errText.includes('PGRST205')) {
+        console.info(`ℹ️ Supabase: La tabla '${endpoint.split('?')[0]}' aún no existe en PostgreSQL. Ejecutá el script supabase-schema.sql en el SQL Editor de Supabase.`);
+      } else {
+        console.warn(`Supabase REST [${method} ${endpoint}] Status ${res.status}:`, errText);
+      }
       return null;
     }
     return await res.json().catch(() => true);
