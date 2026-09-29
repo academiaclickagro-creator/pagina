@@ -1640,7 +1640,7 @@
         Consultas por WhatsApp
       </a>
 
-      <a class="btn-admin" href="index.html#admin" aria-label="Acceso Administrador">
+      <a class="btn-admin" href="admin.html" aria-label="Acceso Administrador">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -2209,7 +2209,7 @@
           <div class="modal-summary-banner">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
             <div>
-              <strong>Edición Digital Editable:</strong> Valor <strong>$50.000</strong> (con opción de pago en <strong>2 cuotas</strong>). Al confirmar tu pedido te comunicaremos al WhatsApp <strong>11 2366 3993</strong> para enviarte el archivo <code>Agenda agro 2027.pdf</code> a tu email.
+              <strong>Edición Digital Editable:</strong> Valor <strong>$50.000</strong> (en hasta <strong>2 cuotas</strong>). Transferencia bancaria al alias <code>CLICKAGRO</code> (Titular: MARIAELINAPIRIZ). Enviá tu comprobante al WhatsApp <strong>+54 11 2366-3993</strong> para recibir el archivo <code>Agenda agro 2027.pdf</code> a tu email.
             </div>
           </div>
 
@@ -2252,7 +2252,7 @@
           <div class="modal-summary-banner" style="background: #eff6ff; border-color: #bfdbfe; color: #1e40af;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
             <div>
-              <strong>Edición Física Impresa:</strong> Valor <strong>$150.000</strong> con <strong>Envío Gratuito a Domicilio</strong> (con opción de pagar en <strong>3 cuotas</strong>). Ingresá los datos del destinatario para generar la guía de envío.
+              <strong>Edición Física Impresa:</strong> Valor <strong>$150.000</strong> con <strong>Envío Gratuito a Domicilio</strong> (en hasta <strong>3 cuotas</strong>). Transferencia al alias <code>CLICKAGRO</code> (Titular: MARIAELINAPIRIZ). Ingresá los datos del destinatario para generar la guía postal y coordinar el despacho al <strong>+54 11 2366-3993</strong>.
             </div>
           </div>
 
@@ -2453,6 +2453,7 @@
   </a>
 
   <!-- ===================== SCRIPTS INTERACTIVOS ===================== -->
+  <script src="clickagro-store.js"></script>
   <script>
     // ── Galería Interactiva por Pestañas ──
     const tabBtns = document.querySelectorAll('.gallery-tab-btn');
@@ -2561,6 +2562,22 @@
         return;
       }
 
+      // Registrar pedido en el sistema de administración
+      if (typeof addDigitalOrder === 'function') {
+        try {
+          addDigitalOrder({
+            nombre: nombre,
+            email: email,
+            tel: tel,
+            cuotas: cuotas,
+            estadoPago: 'Registrado',
+            origen: 'web'
+          });
+        } catch (errOrder) {
+          console.warn('Error registrando orden digital:', errOrder);
+        }
+      }
+
       const mensaje = `Hola Click Agro! Quiero adquirir la *Agenda Agro 2027 (Edición Digital Editable)* por $50.000.
 
 📋 *Datos del Comprador:*
@@ -2577,7 +2594,7 @@ Por favor, envíenme los datos para realizar el pago y recibir el archivo intera
       if (formDigital) formDigital.classList.remove('active');
       if (orderFeedback) {
         orderFeedback.classList.add('active');
-        orderFeedbackText.innerHTML = `¡Gracias <strong>${nombre}</strong>! Tu pedido de la <strong>Edición Digital ($50.000)</strong> fue preparado.<br><br>Se enviará el archivo <code>Agenda agro 2027.pdf</code> a <strong>${email}</strong> una vez coordinado el pago al <strong>11 2366 3993</strong>.`;
+        orderFeedbackText.innerHTML = `¡Gracias <strong>${nombre}</strong>! Tu pedido de la <strong>Edición Digital ($50.000)</strong> fue registrado.<br><br>Se enviará el archivo <code>Agenda agro 2027.pdf</code> a <strong>${email}</strong> una vez validado el comprobante al <strong>+54 11 2366-3993</strong>.<br><br><span style="font-size: 13px; color: #166534;">Alias de pago: <strong>CLICKAGRO</strong> (Titular: MARIAELINAPIRIZ)</span>`;
         if (btnReopenWsp) btnReopenWsp.href = wspUrl;
       }
 
@@ -2603,6 +2620,29 @@ Por favor, envíenme los datos para realizar el pago y recibir el archivo intera
         return;
       }
 
+      // Registrar pedido en el sistema de administración
+      if (typeof addPhysicalOrder === 'function') {
+        try {
+          addPhysicalOrder({
+            nombre: nombre,
+            dni: dni,
+            tel: tel,
+            email: email,
+            direccion: direccion,
+            ciudad: ciudad,
+            provincia: provincia,
+            cp: cp,
+            cuotas: cuotas,
+            notas: notas,
+            estadoPago: 'Registrado',
+            estadoDespacho: 'Pendiente',
+            origen: 'web'
+          });
+        } catch (errOrder) {
+          console.warn('Error registrando orden física:', errOrder);
+        }
+      }
+
       const mensaje = `Hola Click Agro! Quiero encargar la *Agenda Agro 2027 (Edición Física Impresa)* por $150.000 con *Envío Gratuito a Domicilio*.
 
 📦 *Datos de Envío a Domicilio:*
@@ -2625,7 +2665,7 @@ Por favor confírmenme el despacho y los datos para realizar el pago. ¡Muchas g
       if (formFisica) formFisica.classList.remove('active');
       if (orderFeedback) {
         orderFeedback.classList.add('active');
-        orderFeedbackText.innerHTML = `¡Gracias <strong>${nombre}</strong>! Tu pedido de la <strong>Edición Física ($150.000)</strong> con <strong>Envío Gratis a Domicilio</strong> fue preparado.<br><br>Destino: <strong>${direccion}, ${ciudad}, ${provincia} (CP ${cp})</strong>.`;
+        orderFeedbackText.innerHTML = `¡Gracias <strong>${nombre}</strong>! Tu pedido de la <strong>Edición Física ($150.000)</strong> con <strong>Envío Gratis a Domicilio</strong> fue registrado.<br><br>Destino: <strong>${direccion}, ${ciudad}, ${provincia} (CP ${cp})</strong>.<br><br><span style="font-size: 13px; color: #166534;">Alias de pago: <strong>CLICKAGRO</strong> (Titular: MARIAELINAPIRIZ)</span>`;
         if (btnReopenWsp) btnReopenWsp.href = wspUrl;
       }
 
