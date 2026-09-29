@@ -1179,14 +1179,19 @@
             <li>info@clickagro.org</li>
           </ul>
 
-          <div style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 12px;">
-            <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Acceso Directo con Cuenta Autorizada:</label>
+          <div style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 12px; text-align: left;">
+            <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Ingresar correo electrónico:</label>
+            <input type="email" id="custom-auth-email" placeholder="ejemplo@clickagro.com" class="auth-quick-select" style="margin-top: 0; margin-bottom: 6px;" />
+            <button class="btn-quick-auth" onclick="handleCustomEmailLogin()">
+              Verificar Credenciales
+            </button>
+            <div style="margin: 10px 0 6px 0; font-size: 11px; color: #94a3b8; text-align: center;">o acceso directo autorizado:</div>
             <select id="quick-auth-email" class="auth-quick-select">
               <option value="academiaclickagro@gmail.com">academiaclickagro@gmail.com (Principal)</option>
               <option value="mariaelinapiriz@gmail.com">mariaelinapiriz@gmail.com</option>
               <option value="info@clickagro.org">info@clickagro.org</option>
             </select>
-            <button class="btn-quick-auth" onclick="handleDirectAuthorizedLogin()">
+            <button class="btn-quick-auth" style="background: #2d5a45; margin-top: 6px;" onclick="handleDirectAuthorizedLogin()">
               Ingresar como Administrador
             </button>
           </div>
@@ -1403,12 +1408,13 @@
             <thead>
               <tr>
                 <th>Fecha / ID</th>
-                <th>Comprador</th>
-                <th>Teléfono / WhatsApp</th>
+                <th>Nombre</th>
+                <th>Teléfono</th>
                 <th>Email</th>
-                <th>Datos Completos de Envío</th>
-                <th>Pago / Comprobante</th>
-                <th>Despacho Postal</th>
+                <th>Dirección Completa de Envío</th>
+                <th>Localidad</th>
+                <th>Provincia</th>
+                <th>Código Postal</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -1433,14 +1439,10 @@
             <thead>
               <tr>
                 <th>Fecha / ID</th>
-                <th>Nombre del Comprador</th>
-                <th>Casilla de Email</th>
-                <th>Teléfono / Contacto</th>
-                <th>Modalidad / Pago</th>
-                <th>Estado de Pago</th>
-                <th>Acción de Entrega</th>
-                <th>Estado de Entrega</th>
-                <th>Opciones</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Estado</th>
+                <th>Acción</th>
               </tr>
             </thead>
             <tbody id="tbody-pedidos-digital">
@@ -1691,6 +1693,9 @@
       initAuthObserver();
       setupStorageListener();
 
+      // Sincronizar pedidos con la API Serverless de Vercel (/api/pedidos)
+      syncOrdersFromApi();
+
       // Sincronizar con Supabase Cloud y activar Realtime
       if (typeof fetchOrdersFromSupabase === 'function') {
         fetchOrdersFromSupabase().then(() => {
@@ -1699,10 +1704,49 @@
       }
       if (typeof subscribeToSupabaseRealtime === 'function') {
         subscribeToSupabaseRealtime(() => {
-          if (currentUser) renderDashboard();
+          if (currentUser) {
+            syncOrdersFromApi();
+            renderDashboard();
+          }
         });
       }
     });
+
+    // ── SINCRONIZACIÓN CON ENDPOINTS SERVERLESS /api/pedidos ──
+    async function syncOrdersFromApi() {
+      try {
+        const [resFisica, resDigital] = await Promise.all([
+          fetch('/api/pedidos?tipo=fisica').then(r => r.json()).catch(() => null),
+          fetch('/api/pedidos?tipo=digital').then(r => r.json()).catch(() => null)
+        ]);
+
+        let updated = false;
+
+        if (resFisica && resFisica.success && Array.isArray(resFisica.pedidos)) {
+          const current = getPhysicalOrders();
+          const map = new Map();
+          resFisica.pedidos.forEach(p => map.set(p.id, p));
+          current.forEach(p => { if (!map.has(p.id)) map.set(p.id, p); });
+          localStorage.setItem('clickagro_orders_fisica_v1', JSON.stringify(Array.from(map.values())));
+          updated = true;
+        }
+
+        if (resDigital && resDigital.success && Array.isArray(resDigital.pedidos)) {
+          const current = getDigitalOrders();
+          const map = new Map();
+          resDigital.pedidos.forEach(p => map.set(p.id, p));
+          current.forEach(p => { if (!map.has(p.id)) map.set(p.id, p); });
+          localStorage.setItem('clickagro_orders_digital_v1', JSON.stringify(Array.from(map.values())));
+          updated = true;
+        }
+
+        if (updated && currentUser) {
+          renderDashboard();
+        }
+      } catch (err) {
+        console.warn('Error sincronizando con /api/pedidos:', err);
+      }
+    }
 
     // Cambiar de pantalla principal
     function showScreen(screenId) {
@@ -1807,6 +1851,17 @@
       validateAndGrantAccess(selected);
     }
 
+    // Login mediante verificación manual de correo
+    function handleCustomEmailLogin() {
+      const input = document.getElementById('custom-auth-email');
+      const email = input ? input.value.trim() : '';
+      if (!email) {
+        showToast('Por favor ingresá una dirección de correo.', 'error');
+        return;
+      }
+      validateAndGrantAccess(email);
+    }
+
     // Cerrar sesión
     function handleLogout() {
       const client = typeof initSupabase === 'function' ? initSupabase() : null;
@@ -1884,10 +1939,9 @@
 
       emptyState.style.display = 'none';
       tbody.innerHTML = orders.map(order => {
-        const telSanitized = (order.tel || '').replace(/\D/g, '');
+        const telSanitized = (order.tel || order.telefono || '').replace(/\D/g, '');
         const wspUrl = `https://wa.me/${telSanitized.startsWith('54') ? telSanitized : '549' + telSanitized}?text=Hola%20${encodeURIComponent(order.nombre)}!%20Te%20escribimos%20de%20Click%20Agro%20por%20tu%20Agenda%20Agro%202027.`;
-
-        const addressBlock = `${order.direccion || 'Sin dirección'}, ${order.ciudad || ''} (${order.provincia || ''}) - CP ${order.cp || ''}`;
+        const addressBlock = `${order.direccion || 'Sin dirección'}, ${order.ciudad || order.localidad || ''} (${order.provincia || ''}) - CP ${order.cp || ''}`;
 
         return `
           <tr id="row-${order.id}">
@@ -1897,12 +1951,12 @@
             </td>
             <td class="buyer-info">
               <strong>${escapeHtml(order.nombre)}</strong>
-              <span>DNI/CUIT: ${escapeHtml(order.dni || 'No especificado')}</span>
+              ${order.dni ? `<span style="font-size: 11px; color: #64748b;">DNI: ${escapeHtml(order.dni)}</span>` : ''}
             </td>
             <td>
               <div class="contact-cell">
-                <span>${escapeHtml(order.tel || '-')}</span>
-                ${order.tel ? `<a class="btn-wsp-direct" href="${wspUrl}" target="_blank">📲 Abrir WhatsApp</a>` : ''}
+                <span>${escapeHtml(order.tel || order.telefono || '-')}</span>
+                ${(order.tel || order.telefono) ? `<a class="btn-wsp-direct" href="${wspUrl}" target="_blank">📲 WhatsApp</a>` : ''}
               </div>
             </td>
             <td>
@@ -1910,44 +1964,23 @@
             </td>
             <td>
               <div class="shipping-box">
-                <div class="address-line">📍 ${escapeHtml(order.direccion || '')}</div>
-                <div class="city-line">${escapeHtml(order.ciudad || '')}, ${escapeHtml(order.provincia || '')} (CP ${escapeHtml(order.cp || '')})</div>
+                <div class="address-line">📍 ${escapeHtml(order.direccion || '-')}</div>
                 ${order.notas ? `<div class="notes-badge">📝 ${escapeHtml(order.notas)}</div>` : ''}
-                <div style="margin-top: 6px;">
-                  <button class="btn-tab-action" style="padding: 2px 6px; font-size: 11px;" onclick="copyToClipboard('${escapeJsString(addressBlock)}', 'Dirección de envío copiada!')">
-                    📋 Copiar Guía
-                  </button>
-                </div>
               </div>
             </td>
             <td>
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                <select class="status-select" onchange="handleChangePhysicalStatus('${order.id}', this.value)">
-                  <option value="Registrado" ${order.estadoPago === 'Registrado' ? 'selected' : ''}>Registrado</option>
-                  <option value="Confirmado" ${order.estadoPago === 'Confirmado' ? 'selected' : ''}>Confirmado</option>
-                  <option value="Pendiente" ${order.estadoPago === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
-                </select>
-                <span class="status-badge ${order.estadoPago ? order.estadoPago.toLowerCase() : 'registrado'}" style="font-size: 10px; padding: 2px 6px;">
-                  ${order.estadoPago || 'Registrado'}
-                </span>
-                <span style="font-size: 10px; color: #64748b;">${escapeHtml(order.cuotas || '1 pago')}</span>
-              </div>
+              <strong>${escapeHtml(order.ciudad || order.localidad || '-')}</strong>
             </td>
             <td>
-              <div style="display: flex; flex-direction: column; gap: 4px;">
-                <select class="status-select" onchange="handleChangePhysicalDispatch('${order.id}', this.value)">
-                  <option value="Pendiente" ${order.estadoDespacho === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
-                  <option value="En preparación" ${order.estadoDespacho === 'En preparación' ? 'selected' : ''}>En preparación</option>
-                  <option value="Despachado" ${order.estadoDespacho === 'Despachado' ? 'selected' : ''}>Despachado</option>
-                  <option value="Entregado" ${order.estadoDespacho === 'Entregado' ? 'selected' : ''}>Entregado</option>
-                </select>
-                ${order.numeroGuia ? `<span style="font-size: 11px; font-family: monospace; color: #166534;">Guía: ${escapeHtml(order.numeroGuia)}</span>` : ''}
-              </div>
+              <span>${escapeHtml(order.provincia || '-')}</span>
             </td>
             <td>
-              <div style="display: flex; gap: 4px;">
-                <button class="btn-resend-discrete" title="Editar número de guía" onclick="promptTrackingNumber('${order.id}')">
-                  🏷️
+              <span style="font-family: monospace; font-weight: 700; color: #1e3d2f;">${escapeHtml(order.cp || '-')}</span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <button class="btn-tab-action" style="padding: 3px 8px; font-size: 11px;" onclick="copyToClipboard('${escapeJsString(addressBlock)}', 'Dirección copiada!')" title="Copiar dirección completa">
+                  📋 Guía
                 </button>
                 <button class="btn-resend-discrete" style="color: #ef4444;" title="Eliminar pedido" onclick="confirmDeleteOrder('fisica', '${order.id}')">
                   🗑️
@@ -1976,9 +2009,6 @@
 
       emptyState.style.display = 'none';
       tbody.innerHTML = orders.map(order => {
-        const telSanitized = (order.tel || '').replace(/\D/g, '');
-        const wspUrl = `https://wa.me/${telSanitized.startsWith('54') ? telSanitized : '549' + telSanitized}?text=Hola%20${encodeURIComponent(order.nombre)}!%20Te%20escribimos%20de%20Click%20Agro%20por%20tu%20Agenda%20Agro%202027%20Digital.`;
-
         return `
           <tr id="row-${order.id}">
             <td>
@@ -1996,28 +2026,27 @@
                 </button>
               </div>
             </td>
-            <td>
-              <div class="contact-cell">
-                <span>${escapeHtml(order.tel || '-')}</span>
-                ${order.tel ? `<a class="btn-wsp-direct" href="${wspUrl}" target="_blank">📲 WhatsApp</a>` : ''}
-              </div>
+            <td id="status-cell-${order.id}">
+              ${order.enviado ? `
+                <span class="status-badge confirmado" style="font-size: 11px;">
+                  ✔ Enviado
+                </span>
+                ${order.fechaEnvio ? `<div style="font-size: 10px; color: #15803d; margin-top: 3px;">${order.fechaEnvio}</div>` : ''}
+              ` : `
+                <span class="status-badge pendiente" style="font-size: 11px;">
+                  ⏳ Pendiente
+                </span>
+              `}
             </td>
-            <td>
-              <div style="font-size: 12px; font-weight: 600;">$50.000</div>
-              <div style="font-size: 11px; color: #64748b;">${escapeHtml(order.cuotas || '1 pago')}</div>
-            </td>
-            <td>
-              <select class="status-select" onchange="handleChangeDigitalPaymentStatus('${order.id}', this.value)">
-                <option value="Registrado" ${order.estadoPago === 'Registrado' ? 'selected' : ''}>Registrado</option>
-                <option value="Confirmado" ${order.estadoPago === 'Confirmado' ? 'selected' : ''}>Confirmado</option>
-                <option value="Pendiente" ${order.estadoPago === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
-              </select>
-            </td>
-            <td>
+            <td id="action-cell-${order.id}">
               <div class="action-send-wrapper">
                 ${order.enviado ? `
-                  <button class="btn-resend-discrete" title="Reenviar archivo" onclick="handleSendDigitalAgenda('${order.id}', true)">
-                    🔄 Reenviar
+                  <div class="badge-sent-check" style="display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>✔ Enviado</span>
+                  </div>
+                  <button class="btn-resend-discrete" title="Reenviar archivo por correo" onclick="handleSendDigitalAgenda('${order.id}', true)">
+                    🔄
                   </button>
                 ` : `
                   <button id="btn-send-${order.id}" class="btn-send-digital" onclick="handleSendDigitalAgenda('${order.id}', false)">
@@ -2026,26 +2055,6 @@
                   </button>
                 `}
               </div>
-            </td>
-            <td>
-              ${order.enviado ? `
-                <div class="badge-sent-check" title="Enviado por: ${escapeHtml(order.enviadoPor || 'Admin')}">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  <span>✔ Enviado</span>
-                </div>
-                <div style="font-size: 10px; color: #15803d; margin-top: 3px;">
-                  ${order.fechaEnvio || ''}
-                </div>
-              ` : `
-                <span class="status-badge pendiente" style="font-size: 11px;">
-                  ⏳ Pendiente
-                </span>
-              `}
-            </td>
-            <td>
-              <button class="btn-resend-discrete" style="color: #ef4444;" title="Eliminar pedido" onclick="confirmDeleteOrder('digital', '${order.id}')">
-                🗑️
-              </button>
             </td>
           </tr>
         `;
@@ -2066,8 +2075,8 @@
           const q = searchQuery.toLowerCase();
           const matchName = (o.nombre || '').toLowerCase().includes(q);
           const matchEmail = (o.email || '').toLowerCase().includes(q);
-          const matchTel = (o.tel || '').toLowerCase().includes(q);
-          const matchCity = (o.ciudad || '').toLowerCase().includes(q);
+          const matchTel = (o.tel || o.telefono || '').toLowerCase().includes(q);
+          const matchCity = (o.ciudad || o.localidad || '').toLowerCase().includes(q);
           const matchAddress = (o.direccion || '').toLowerCase().includes(q);
           const matchId = (o.id || '').toLowerCase().includes(q);
           return matchName || matchEmail || matchTel || matchCity || matchAddress || matchId;
@@ -2077,7 +2086,7 @@
       });
     }
 
-    // ── LÓGICA DEL BOTÓN "ENVIAR" EN AGENCIA DIGITAL ──
+    // ── LÓGICA DEL BOTÓN "ENVIAR" EN AGENDA DIGITAL (FETCH /api/send-agenda) ──
     let currentDispatchOrderId = null;
 
     async function handleSendDigitalAgenda(orderId, isResend = false) {
@@ -2097,48 +2106,97 @@
       }
 
       const btn = document.getElementById(`btn-send-${order.id}`);
+      const actionCell = document.getElementById(`action-cell-${order.id}`);
+
+      // Estado visual: Cargando...
       if (btn) {
         btn.classList.add('loading');
-        btn.innerHTML = `<div class="spinner"></div> Procesando...`;
+        btn.disabled = true;
+        btn.innerHTML = `<div class="spinner"></div> Cargando...`;
       }
 
       try {
-        const result = await ClickAgroMailer.sendDigitalAgendaEmail(order, currentUser);
+        // Ejecución de la petición a la API Serverless con Resend
+        const resp = await fetch('/api/send-agenda', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: order.email,
+            nombre: order.nombre,
+            pedidoId: order.id
+          })
+        });
 
-        if (result.success) {
-          markDigitalOrderSent(orderId, currentUser?.email);
-          renderDashboard();
-          showToast(`✔ ¡Agenda Agro 2027 despachada con éxito a ${order.email}!`, 'success');
+        const data = await resp.json().catch(() => ({}));
+
+        if (resp.ok && data.success) {
+          // Marcar orden como enviada en el gestor local
+          markDigitalOrderSent(orderId, currentUser?.email || 'admin');
+
+          // Al confirmar la respuesta exitosa del servidor:
+          // Oculta el botón y muestra un tilde verde visible (✔ Enviado)
+          if (actionCell) {
+            actionCell.innerHTML = `
+              <div class="action-send-wrapper">
+                <div class="badge-sent-check" style="display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>✔ Enviado</span>
+                </div>
+                <button class="btn-resend-discrete" title="Reenviar archivo" onclick="handleSendDigitalAgenda('${order.id}', true)">
+                  🔄
+                </button>
+              </div>
+            `;
+          }
+
+          // Actualizar estado en celda de Estado
+          const statusCell = document.getElementById(`status-cell-${order.id}`);
+          if (statusCell) {
+            statusCell.innerHTML = `
+              <span class="status-badge confirmado" style="font-size: 11px;">
+                ✔ Enviado
+              </span>
+              <div style="font-size: 10px; color: #15803d; margin-top: 3px;">Ahora</div>
+            `;
+          }
+
+          renderMetrics();
+          showToast(`✔ Agenda Agro 2027 enviada exitosamente a ${order.email}`, 'success');
+
         } else {
-          // Abrir modal de despacho con Gmail Oficial y WhatsApp
-          currentDispatchOrderId = orderId;
-          const reasonNotice = result.reason ? `
-            <div style="margin-top: 10px; font-size: 12px; color: #92400e; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 8px 12px;">
-              ⚠️ <strong>Aviso del Servicio de Correo:</strong> ${escapeHtml(result.reason)}
-            </div>
-          ` : '';
+          const errorMsg = (data && data.error) ? data.error : 'No se pudo enviar el correo';
+          showToast(`Error al enviar: ${errorMsg}`, 'error');
+          console.warn('Detalle de error en /api/send-agenda:', data);
 
+          // Si falla, permitir reintentar o enviar manualmente con modal de contingencia
+          currentDispatchOrderId = orderId;
+          const emailData = ClickAgroMailer.buildEmailData(order, currentUser);
           document.getElementById('dispatch-buyer-info').innerHTML = `
             <strong>${escapeHtml(order.nombre)}</strong> &lt;${escapeHtml(order.email)}&gt;<br>
-            <span style="font-size: 12px; color: #64748b;">Pedido: ${order.id} | Archivo: Agenda agro 2027.pdf (8.3 MB)</span>
-            ${reasonNotice}
+            <span style="font-size: 12px; color: #64748b;">Pedido: ${order.id} | Archivo: Agenda agro 2027.pdf</span>
+            <div style="margin-top: 8px; font-size: 12px; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 8px 10px;">
+              ⚠️ <strong>Motivo informado:</strong> ${escapeHtml(errorMsg)}
+            </div>
           `;
-          document.getElementById('btn-dispatch-gmail').href = result.gmailUrl;
-          document.getElementById('btn-dispatch-wsp').href = result.wspUrl;
-          
+          document.getElementById('btn-dispatch-gmail').href = emailData.gmailUrl;
+          document.getElementById('btn-dispatch-wsp').href = emailData.wspUrl;
           openModal('modal-send-dispatch');
 
           if (btn) {
             btn.classList.remove('loading');
+            btn.disabled = false;
             btn.innerHTML = isResend ? '🔄 Reenviar' : 'ENVIAR';
           }
         }
       } catch (err) {
-        console.error('Error al enviar:', err);
-        showToast('Error al procesar el envío.', 'error');
+        console.error('Error de red al conectar con /api/send-agenda:', err);
+        showToast('Error al conectar con /api/send-agenda. Comprobá tu conexión.', 'error');
         if (btn) {
           btn.classList.remove('loading');
-          btn.innerHTML = `ENVIAR`;
+          btn.disabled = false;
+          btn.innerHTML = isResend ? '🔄 Reenviar' : 'ENVIAR';
         }
       }
     }

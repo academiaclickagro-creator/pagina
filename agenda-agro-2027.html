@@ -2551,8 +2551,12 @@
     }
 
     // Enviar pedido Edición Digital
-    function submitDigitalOrder(e) {
+    async function submitDigitalOrder(e) {
       e.preventDefault();
+      const form = document.getElementById('form-digital');
+      const submitBtn = form.querySelector('.btn-submit-order');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+
       const nombre = document.getElementById('dig-nombre').value.trim();
       const email = document.getElementById('dig-email').value.trim();
       const tel = document.getElementById('dig-tel').value.trim();
@@ -2563,51 +2567,100 @@
         return;
       }
 
-      // Registrar pedido en el sistema de administración
-      if (typeof addDigitalOrder === 'function') {
-        try {
-          const registered = addDigitalOrder({
-            nombre: nombre,
-            email: email,
-            tel: tel,
-            cuotas: cuotas,
-            estadoPago: 'Registrado',
-            origen: 'web'
-          });
-          console.log('✓ Pedido Digital registrado en ClickAgroStore:', registered);
-        } catch (errOrder) {
-          console.warn('Error registrando orden digital:', errOrder);
-        }
-      } else {
-        console.warn('ClickAgroStore: addDigitalOrder no está disponible en la página.');
+      // Estado de carga en el botón
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Procesando pedido en el servidor...';
       }
 
-      const mensaje = `Hola Click Agro! Quiero adquirir la *Agenda Agro 2027 (Edición Digital Editable)* por $50.000.
+      try {
+        // Petición al backend en Vercel
+        const response = await fetch('/api/pedidos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: nombre,
+            email: email,
+            telefono: tel,
+            tipo: 'digital',
+            cuotas: cuotas,
+            monto: 50000
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        // Validación estricta: ÚNICAMENTE si response.ok y data.success === true
+        if (!response.ok || !data || !data.success) {
+          const errorMsg = (data && data.error) ? data.error : 'Ocurrió un error al registrar tu pedido. Por favor intentá nuevamente o contactanos por WhatsApp.';
+          alert('Atención: ' + errorMsg);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+          }
+          return;
+        }
+
+        // Registrar en store local si está disponible
+        if (typeof addDigitalOrder === 'function') {
+          try {
+            addDigitalOrder(data.pedido || {
+              nombre: nombre,
+              email: email,
+              tel: tel,
+              cuotas: cuotas,
+              estadoPago: 'Registrado',
+              origen: 'web'
+            });
+          } catch (errStore) {
+            console.warn('Store local warning:', errStore);
+          }
+        }
+
+        const mensaje = `Hola Click Agro! Acabo de registrar mi pedido de la *Agenda Agro 2027 (Edición Digital Editable)* por $50.000.
 
 📋 *Datos del Comprador:*
+• *ID Pedido:* ${data.pedido?.id || 'DIG-WEB'}
 • *Nombre:* ${nombre}
 • *Email para recibir Agenda agro 2027.pdf:* ${email}
 • *Teléfono:* ${tel}
-• *Modalidad de pago:* ${cuotas}
+• *Modalidad:* ${cuotas}
 
-Por favor, envíenme los datos para realizar el pago y recibir el archivo interactivo. ¡Muchas gracias!`;
+Por favor, envíenme los datos para realizar la transferencia al alias CLICKAGRO y recibir el archivo interactivo. ¡Muchas gracias!`;
 
-      const wspUrl = `https://wa.me/5491123663993?text=${encodeURIComponent(mensaje)}`;
+        const wspUrl = `https://wa.me/5491123663993?text=${encodeURIComponent(mensaje)}`;
 
-      // Mostrar confirmación
-      if (formDigital) formDigital.classList.remove('active');
-      if (orderFeedback) {
-        orderFeedback.classList.add('active');
-        orderFeedbackText.innerHTML = `¡Gracias <strong>${nombre}</strong>! Tu pedido de la <strong>Edición Digital ($50.000)</strong> fue registrado.<br><br>Se enviará el archivo <code>Agenda agro 2027.pdf</code> a <strong>${email}</strong> una vez validado el comprobante al <strong>+54 11 2366-3993</strong>.<br><br><span style="font-size: 13px; color: #166534;">Alias de pago: <strong>CLICKAGRO</strong> (Titular: MARIAELINAPIRIZ)</span>`;
-        if (btnReopenWsp) btnReopenWsp.href = wspUrl;
+        // Mostrar pantalla de confirmación "¡Pedido Preparado con Éxito!"
+        if (formDigital) formDigital.classList.remove('active');
+        if (orderFeedback) {
+          orderFeedback.classList.add('active');
+          orderFeedbackText.innerHTML = `¡Gracias <strong>${nombre}</strong>! Tu pedido de la <strong>Edición Digital ($50.000)</strong> fue registrado con éxito en nuestro sistema (Ref: <strong>${data.pedido?.id || 'DIG-WEB'}</strong>).<br><br>Se enviará el archivo <code>Agenda agro 2027.pdf</code> a <strong>${email}</strong> una vez validado el comprobante al <strong>+54 11 2366-3993</strong>.<br><br><span style="font-size: 13px; color: #166534;">Alias de pago: <strong>CLICKAGRO</strong> (Titular: MARIAELINAPIRIZ)</span>`;
+          if (btnReopenWsp) btnReopenWsp.href = wspUrl;
+        }
+
+        // Redirección opcional a WhatsApp oficial
+        window.open(wspUrl, '_blank');
+
+      } catch (errNet) {
+        console.error('Error de red al conectar con /api/pedidos:', errNet);
+        alert('No se pudo establecer conexión con el servidor (/api/pedidos). Por favor comprobá tu conexión a internet o comunicate directamente al 11 2366 3993.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
       }
-
-      window.open(wspUrl, '_blank');
     }
 
     // Enviar pedido Edición Física
-    function submitPhysicalOrder(e) {
+    async function submitPhysicalOrder(e) {
       e.preventDefault();
+      const form = document.getElementById('form-fisica');
+      const submitBtn = form.querySelector('.btn-submit-order');
+      const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+
       const nombre = document.getElementById('fis-nombre').value.trim();
       const dni = document.getElementById('fis-dni').value.trim();
       const tel = document.getElementById('fis-tel').value.trim();
@@ -2620,63 +2673,113 @@ Por favor, envíenme los datos para realizar el pago y recibir el archivo intera
       const notas = document.getElementById('fis-notas').value.trim();
 
       if (!nombre || !dni || !tel || !direccion || !ciudad || !provincia || !cp) {
-        alert('Por favor completá los datos requeridos para el envío a domicilio.');
+        alert('Por favor completá todos los campos requeridos para el despacho postal a domicilio.');
         return;
       }
 
-      // Registrar pedido en el sistema de administración
-      if (typeof addPhysicalOrder === 'function') {
-        try {
-          const registered = addPhysicalOrder({
+      // Estado de carga en el botón
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Procesando orden de despacho...';
+      }
+
+      try {
+        // Petición al backend en Vercel
+        const response = await fetch('/api/pedidos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
             nombre: nombre,
             dni: dni,
-            tel: tel,
+            telefono: tel,
             email: email,
+            tipo: 'fisica',
             direccion: direccion,
+            localidad: ciudad,
             ciudad: ciudad,
             provincia: provincia,
             cp: cp,
             cuotas: cuotas,
             notas: notas,
-            estadoPago: 'Registrado',
-            estadoDespacho: 'Pendiente',
-            origen: 'web'
-          });
-          console.log('✓ Pedido Físico registrado en ClickAgroStore:', registered);
-        } catch (errOrder) {
-          console.warn('Error registrando orden física:', errOrder);
+            monto: 150000
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        // Validación estricta: ÚNICAMENTE si response.ok y data.success === true
+        if (!response.ok || !data || !data.success) {
+          const errorMsg = (data && data.error) ? data.error : 'Ocurrió un error al registrar la orden física. Por favor intentá nuevamente o contactanos.';
+          alert('Atención: ' + errorMsg);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+          }
+          return;
         }
-      } else {
-        console.warn('ClickAgroStore: addPhysicalOrder no está disponible en la página.');
-      }
 
-      const mensaje = `Hola Click Agro! Quiero encargar la *Agenda Agro 2027 (Edición Física Impresa)* por $150.000 con *Envío Gratuito a Domicilio*.
+        // Registrar en store local si está disponible
+        if (typeof addPhysicalOrder === 'function') {
+          try {
+            addPhysicalOrder(data.pedido || {
+              nombre: nombre,
+              dni: dni,
+              tel: tel,
+              email: email,
+              direccion: direccion,
+              ciudad: ciudad,
+              provincia: provincia,
+              cp: cp,
+              cuotas: cuotas,
+              notas: notas,
+              estadoPago: 'Registrado',
+              estadoDespacho: 'Pendiente',
+              origen: 'web'
+            });
+          } catch (errStore) {
+            console.warn('Store local warning:', errStore);
+          }
+        }
 
-📦 *Datos de Envío a Domicilio:*
+        const mensaje = `Hola Click Agro! Registré mi pedido de la *Agenda Agro 2027 (Edición Física Impresa)* por $150.000 con *Envío Gratuito a Domicilio*.
+
+📦 *Datos para la Guía Postal:*
+• *ID Pedido:* ${data.pedido?.id || 'FIS-WEB'}
 • *Destinatario:* ${nombre}
 • *DNI/CUIT:* ${dni}
 • *Teléfono:* ${tel}
-${email ? `• *Email:* ${email}
-` : ''}• *Dirección:* ${direccion}
+${email ? `• *Email:* ${email}\n` : ''}• *Dirección:* ${direccion}
 • *Localidad / Ciudad:* ${ciudad}
 • *Provincia:* ${provincia}
 • *Código Postal:* ${cp}
-${notas ? `• *Aclaraciones de entrega:* ${notas}
-` : ''}• *Modalidad de pago:* ${cuotas}
+${notas ? `• *Aclaraciones de entrega:* ${notas}\n` : ''}• *Modalidad:* ${cuotas}
 
-Por favor confírmenme el despacho y los datos para realizar el pago. ¡Muchas gracias!`;
+Por favor confírmenme el despacho y los datos de pago al alias CLICKAGRO. ¡Muchas gracias!`;
 
-      const wspUrl = `https://wa.me/5491123663993?text=${encodeURIComponent(mensaje)}`;
+        const wspUrl = `https://wa.me/5491123663993?text=${encodeURIComponent(mensaje)}`;
 
-      // Mostrar confirmación
-      if (formFisica) formFisica.classList.remove('active');
-      if (orderFeedback) {
-        orderFeedback.classList.add('active');
-        orderFeedbackText.innerHTML = `¡Gracias <strong>${nombre}</strong>! Tu pedido de la <strong>Edición Física ($150.000)</strong> con <strong>Envío Gratis a Domicilio</strong> fue registrado.<br><br>Destino: <strong>${direccion}, ${ciudad}, ${provincia} (CP ${cp})</strong>.<br><br><span style="font-size: 13px; color: #166534;">Alias de pago: <strong>CLICKAGRO</strong> (Titular: MARIAELINAPIRIZ)</span>`;
-        if (btnReopenWsp) btnReopenWsp.href = wspUrl;
+        // Mostrar pantalla de confirmación "¡Pedido Preparado con Éxito!"
+        if (formFisica) formFisica.classList.remove('active');
+        if (orderFeedback) {
+          orderFeedback.classList.add('active');
+          orderFeedbackText.innerHTML = `¡Gracias <strong>${nombre}</strong>! Tu pedido de la <strong>Edición Física ($150.000)</strong> con <strong>Envío Gratis a Domicilio</strong> fue registrado con éxito (Ref: <strong>${data.pedido?.id || 'FIS-WEB'}</strong>).<br><br>Destino postal: <strong>${direccion}, ${ciudad}, ${provincia} (CP ${cp})</strong>.<br><br><span style="font-size: 13px; color: #166534;">Alias de pago: <strong>CLICKAGRO</strong> (Titular: MARIAELINAPIRIZ)</span>`;
+          if (btnReopenWsp) btnReopenWsp.href = wspUrl;
+        }
+
+        // Redirección opcional a WhatsApp oficial
+        window.open(wspUrl, '_blank');
+
+      } catch (errNet) {
+        console.error('Error de red al conectar con /api/pedidos:', errNet);
+        alert('No se pudo establecer conexión con el servidor (/api/pedidos). Por favor comprobá tu conexión a internet o comunicate directamente al 11 2366 3993.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnText;
+        }
       }
-
-      window.open(wspUrl, '_blank');
     }
 
     // Escape listener para cerrar modales
