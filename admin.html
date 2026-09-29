@@ -1,0 +1,2453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Administración | Click Agro Argentina</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/png" href="imagenes/logo.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Módulos de datos y envíos Click Agro -->
+  <script src="clickagro-store.js"></script>
+  <script src="clickagro-mailer.js"></script>
+
+  <style>
+    :root {
+      --color-primary-dark: #113322;
+      --color-primary: #1e3d2f;
+      --color-primary-light: #2d5a45;
+      --color-accent-green: #16a34a;
+      --color-accent-bright: #22c55e;
+      --color-accent-lime: #84cc16;
+      --color-bg-page: #f1f5f9;
+      --color-bg-card: #ffffff;
+      --color-text-main: #0f172a;
+      --color-text-muted: #475569;
+      --color-text-subtle: #94a3b8;
+      --color-border: #e2e8f0;
+      --color-border-focus: #16a34a;
+      --color-danger: #ef4444;
+      --color-danger-bg: #fef2f2;
+      --color-warning: #f59e0b;
+      --color-warning-bg: #fffbeb;
+      --color-info: #0284c7;
+      --color-info-bg: #f0f9ff;
+      --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-heading: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 12px rgba(17, 51, 34, 0.08);
+      --shadow-lg: 0 12px 28px rgba(17, 51, 34, 0.12);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-body);
+      background-color: var(--color-bg-page);
+      color: var(--color-text-main);
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── CONTENEDORES PRINCIPALES ── */
+    .view-screen { display: none; }
+    .view-screen.active { display: block; }
+
+    /* ── 1. PANTALLA DE LOGIN & DENIEGO ── */
+    .auth-page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #113322 0%, #1e3d2f 50%, #164e33 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-bg-deco {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(132, 204, 22, 0.15) 0%, rgba(22, 163, 74, 0) 70%);
+      top: -150px;
+      right: -150px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .auth-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: var(--radius-lg);
+      padding: 44px 38px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      position: relative;
+      z-index: 2;
+      text-align: center;
+    }
+
+    .auth-logo-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .auth-logo-wrap img {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .auth-logo-text {
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: 22px;
+      color: var(--color-primary);
+      text-align: left;
+      line-height: 1.1;
+    }
+
+    .auth-logo-text span {
+      display: block;
+      font-size: 11px;
+      font-family: var(--font-body);
+      color: var(--color-accent-green);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .auth-title {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-bottom: 8px;
+    }
+
+    .auth-subtitle {
+      color: var(--color-text-muted);
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
+
+    .btn-google-login {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      background: #ffffff;
+      color: #374151;
+      border: 1.5px solid #d1d5db;
+      padding: 13px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+    }
+
+    .btn-google-login:hover {
+      background: #f9fafb;
+      border-color: #9ca3af;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      transform: translateY(-1px);
+    }
+
+    .btn-google-login svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      color: var(--color-text-subtle);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .auth-divider::before, .auth-divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .auth-divider span {
+      padding: 0 12px;
+    }
+
+    .auth-allowed-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 24px;
+      text-align: left;
+    }
+
+    .auth-allowed-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .auth-allowed-list {
+      list-style: none;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      display: grid;
+      gap: 5px;
+    }
+
+    .auth-allowed-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .auth-allowed-list li::before {
+      content: "•";
+      color: var(--color-accent-green);
+      font-size: 16px;
+    }
+
+    .auth-quick-select {
+      margin-top: 14px;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 13px;
+      background: #ffffff;
+      color: var(--color-text-main);
+    }
+
+    .btn-quick-auth {
+      margin-top: 8px;
+      width: 100%;
+      background: var(--color-primary);
+      color: #ffffff;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-quick-auth:hover {
+      background: var(--color-primary-light);
+    }
+
+    /* ── PANTALLA ACCESO DENEGADO ── */
+    .denied-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: var(--radius-lg);
+      padding: 44px 38px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+      text-align: center;
+      border-top: 6px solid var(--color-danger);
+    }
+
+    .denied-icon-wrap {
+      width: 72px;
+      height: 72px;
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .denied-title {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      font-weight: 800;
+      color: #991b1b;
+      margin-bottom: 12px;
+    }
+
+    .denied-desc {
+      color: var(--color-text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .denied-account-pill {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #1f2937;
+      display: inline-block;
+      margin-bottom: 24px;
+      word-break: break-all;
+    }
+
+    .denied-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-denied-retry {
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn-denied-home {
+      background: #f1f5f9;
+      color: var(--color-text-muted);
+      border: 1px solid #cbd5e1;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* ── 2. DASHBOARD DE ADMINISTRACIÓN ── */
+    .admin-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--color-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .admin-nav-bar {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-section img {
+      height: 38px;
+      width: auto;
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--color-primary);
+      line-height: 1.1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-admin-tag {
+      background: #dcfce7;
+      color: #15803d;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-text p {
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    .header-user-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--color-border);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .user-pill-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--color-accent-green);
+      border-radius: 50%;
+    }
+
+    .btn-header-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      padding: 7px 13px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn-header-action:hover {
+      background: #f1f5f9;
+      color: var(--color-text-main);
+      border-color: #cbd5e1;
+    }
+
+    .btn-logout {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    .btn-logout:hover {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+
+    /* ── BANNER INFORMATIVO (PAGOS & WHATSAPP) ── */
+    .admin-info-strip {
+      background: linear-gradient(90deg, #1e3d2f 0%, #2a5240 100%);
+      color: #ffffff;
+      padding: 10px 24px;
+      font-size: 13px;
+    }
+
+    .admin-info-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .info-items-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .info-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-tag strong {
+      color: #86efac;
+    }
+
+    .info-copy-chip {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 2px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .info-copy-chip:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* ── MAIN CONTENT & TABS ── */
+    .admin-main {
+      max-width: 1400px;
+      margin: 24px auto 60px;
+      padding: 0 24px;
+    }
+
+    /* ── METRICS CARDS ── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .metric-data h3 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .metric-data .metric-number {
+      font-family: var(--font-heading);
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--color-primary);
+      line-height: 1;
+    }
+
+    .metric-icon-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .metric-icon-box.green { background: #dcfce7; color: #16a34a; }
+    .metric-icon-box.blue { background: #e0f2fe; color: #0284c7; }
+    .metric-icon-box.amber { background: #fef3c7; color: #d97706; }
+    .metric-icon-box.purple { background: #ede9fe; color: #7c3aed; }
+
+    /* ── TAB NAVIGATION BAR ── */
+    .tabs-header-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--color-border);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .nav-tabs-list {
+      display: flex;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .tab-button {
+      background: none;
+      border: none;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: -2px;
+      transition: all 0.2s ease;
+      font-family: var(--font-body);
+    }
+
+    .tab-button:hover {
+      color: var(--color-primary);
+    }
+
+    .tab-button.active {
+      color: var(--color-primary);
+      border-bottom-color: var(--color-accent-green);
+    }
+
+    .tab-badge-counter {
+      background: #e2e8f0;
+      color: var(--color-text-main);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .tab-button.active .tab-badge-counter {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .tab-actions-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 8px;
+    }
+
+    .btn-tab-action {
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      color: var(--color-text-main);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-tab-action:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .btn-tab-action.primary {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    .btn-tab-action.primary:hover {
+      background: var(--color-primary-light);
+    }
+
+    /* ── BARRA DE BÚSQUEDA Y FILTROS ── */
+    .filter-bar {
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .search-input-wrap {
+      flex: 1;
+      min-width: 260px;
+      position: relative;
+    }
+
+    .search-input-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-text-subtle);
+      width: 16px;
+      height: 16px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 9px 12px 9px 36px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--color-accent-green);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+    }
+
+    .filter-options {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-select {
+      padding: 9px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      font-size: 13px;
+      background: #ffffff;
+      color: var(--color-text-main);
+      cursor: pointer;
+    }
+
+    /* ── TABLAS DE DATOS ── */
+    .tab-content-panel { display: none; }
+    .tab-content-panel.active { display: block; }
+
+    .data-table-container {
+      background: #ffffff;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow-x: auto;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .admin-table th {
+      background: #f8fafc;
+      color: var(--color-text-muted);
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
+    }
+
+    .admin-table td {
+      padding: 16px;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+      color: var(--color-text-main);
+    }
+
+    .admin-table tr:hover td {
+      background-color: #f8fafc;
+    }
+
+    /* Celdas específicas */
+    .buyer-info strong {
+      display: block;
+      font-size: 14px;
+      color: var(--color-text-main);
+    }
+
+    .buyer-info span {
+      display: block;
+      font-size: 12px;
+      color: var(--color-text-muted);
+    }
+
+    .contact-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .btn-wsp-direct {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #15803d;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 12px;
+      background: #dcfce7;
+      padding: 3px 8px;
+      border-radius: 6px;
+      width: fit-content;
+      transition: background 0.15s;
+    }
+
+    .btn-wsp-direct:hover {
+      background: #bbf7d0;
+    }
+
+    .shipping-box {
+      max-width: 320px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .shipping-box .address-line {
+      font-weight: 600;
+      color: var(--color-text-main);
+    }
+
+    .shipping-box .city-line {
+      color: var(--color-text-muted);
+    }
+
+    .shipping-box .notes-badge {
+      display: inline-block;
+      margin-top: 4px;
+      background: #fffbeb;
+      color: #92400e;
+      border: 1px solid #fef3c7;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    /* BADGES DE ESTADO DE PAGO */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .status-badge.confirmado {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .status-badge.registrado {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+
+    .status-badge.pendiente {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    /* SELECTOR RÁPIDO DE ESTADO */
+    .status-select {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--color-border);
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* ── BOTÓN Y ESTADO DE ENVÍO DE AGENDA DIGITAL ── */
+    .action-send-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .btn-send-digital {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #16a34a;
+      color: #ffffff;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+    }
+
+    .btn-send-digital:hover {
+      background: #15803d;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(22, 163, 74, 0.35);
+    }
+
+    .btn-send-digital.loading {
+      background: #64748b;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Tilde de confirmación persistente */
+    .badge-sent-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .badge-sent-check svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2.5;
+    }
+
+    .btn-resend-discrete {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .btn-resend-discrete:hover {
+      color: #1e3d2f;
+      background: #f1f5f9;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ESTADO VACÍO */
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--color-text-muted);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      color: var(--color-text-subtle);
+      margin-bottom: 12px;
+    }
+
+    .empty-state h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-text-main);
+      margin-bottom: 6px;
+    }
+
+    /* ── MODALES ── */
+    .admin-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .admin-modal.open {
+      display: flex;
+    }
+
+    .admin-modal-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 540px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: modalIn 0.2s ease-out;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-head {
+      background: var(--color-primary);
+      color: #ffffff;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-head h3 {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .modal-close-icon {
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 24px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--color-text-main);
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      font-family: var(--font-body);
+    }
+
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--color-accent-green);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .modal-footer {
+      background: #f8fafc;
+      padding: 16px 24px;
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* ── NOTIFICACIONES TOAST ── */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast-message {
+      background: #1e3d2f;
+      color: #ffffff;
+      padding: 12px 18px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 0.25s ease-out;
+    }
+
+    .toast-message.success { border-left: 4px solid var(--color-accent-bright); }
+    .toast-message.error { border-left: 4px solid var(--color-danger); background: #7f1d1d; }
+
+    @keyframes toastIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .admin-nav-bar { flex-direction: column; align-items: flex-start; }
+      .header-user-section { width: 100%; justify-content: space-between; }
+      .tabs-header-wrapper { flex-direction: column; align-items: flex-start; }
+      .tab-actions-right { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+      .filter-bar { flex-direction: column; align-items: stretch; }
+      .search-input-wrap { width: 100%; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======================================================== -->
+  <!-- 1. PANTALLA DE ACCESO / LOGIN (AUTH & PERMISOS)           -->
+  <!-- ======================================================== -->
+  <div id="screen-login" class="view-screen active">
+    <div class="auth-page-wrapper">
+      <div class="auth-bg-deco"></div>
+      
+      <div class="auth-card">
+        <div class="auth-logo-wrap">
+          <img src="imagenes/logo.png" alt="Click Agro Logo" />
+          <div class="auth-logo-text">
+            Click Agro
+            <span>Administración</span>
+          </div>
+        </div>
+
+        <h2 class="auth-title">Acceso al Panel</h2>
+        <p class="auth-subtitle">Gestión de Ventas y Envíos · Agenda Agro 2027</p>
+
+        <!-- Botón de Inicio con Google -->
+        <button id="btn-login-google" class="btn-google-login" onclick="handleGoogleSignIn()">
+          <svg viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          Iniciar sesión con Google
+        </button>
+
+        <div class="auth-divider">
+          <span>Control de Acceso Seguro</span>
+        </div>
+
+        <!-- Cuentas autorizadas y Acceso de Verificación Rápida -->
+        <div class="auth-allowed-box">
+          <div class="auth-allowed-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Cuentas Autorizadas Únicamente
+          </div>
+          <ul class="auth-allowed-list">
+            <li>academiaclickagro@gmail.com</li>
+            <li>mariaelinapiriz@gmail.com</li>
+            <li>info@clickagro.org</li>
+          </ul>
+
+          <div style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 12px; text-align: left;">
+            <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Ingresar correo electrónico:</label>
+            <input type="email" id="custom-auth-email" placeholder="ejemplo@clickagro.com" class="auth-quick-select" style="margin-top: 0; margin-bottom: 6px;" />
+            <button class="btn-quick-auth" onclick="handleCustomEmailLogin()">
+              Verificar Credenciales
+            </button>
+            <div style="margin: 10px 0 6px 0; font-size: 11px; color: #94a3b8; text-align: center;">o acceso directo autorizado:</div>
+            <select id="quick-auth-email" class="auth-quick-select">
+              <option value="academiaclickagro@gmail.com">academiaclickagro@gmail.com (Principal)</option>
+              <option value="mariaelinapiriz@gmail.com">mariaelinapiriz@gmail.com</option>
+              <option value="info@clickagro.org">info@clickagro.org</option>
+            </select>
+            <button class="btn-quick-auth" style="background: #2d5a45; margin-top: 6px;" onclick="handleDirectAuthorizedLogin()">
+              Ingresar como Administrador
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <a href="index.html" style="font-size: 13px; color: #64748b; text-decoration: none;">← Volver al sitio principal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 2. PANTALLA DE ACCESO DENEGADO                           -->
+  <!-- ======================================================== -->
+  <div id="screen-denied" class="view-screen">
+    <div class="auth-page-wrapper">
+      <div class="auth-card denied-card">
+        <div class="denied-icon-wrap">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+          </svg>
+        </div>
+
+        <h2 class="denied-title">Acceso Denegado</h2>
+        
+        <p class="denied-desc">
+          La cuenta que intentó ingresar no figura en la lista de administradores autorizados para la gestión de Click Agro.
+        </p>
+
+        <div id="denied-email-display" class="denied-account-pill">
+          usuario@desconocido.com
+        </div>
+
+        <div class="denied-actions">
+          <button class="btn-denied-retry" onclick="showScreen('screen-login')">
+            Intentar con otra cuenta
+          </button>
+          <a class="btn-denied-home" href="index.html">
+            Volver a la página principal
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- 3. DASHBOARD DE ADMINISTRACIÓN (TABS Y GESTIÓN)          -->
+  <!-- ======================================================== -->
+  <div id="screen-dashboard" class="view-screen">
+    
+    <!-- Header del Dashboard -->
+    <header class="admin-header">
+      <div class="admin-nav-bar">
+        <div class="brand-section">
+          <img src="imagenes/logo.png" alt="Click Agro Logo" />
+          <div class="brand-text">
+            <h1>
+              Click Agro
+              <span class="badge-admin-tag">ADMIN</span>
+            </h1>
+            <p>Gestión de Ventas y Envíos · Agenda Agro 2027</p>
+          </div>
+        </div>
+
+        <div class="header-user-section">
+          <div class="user-pill">
+            <span class="user-pill-dot"></span>
+            <span id="admin-user-email">academiaclickagro@gmail.com</span>
+          </div>
+
+          <a class="btn-header-action" href="agenda-agro-2027.html" target="_blank" title="Ver Landing de la Agenda">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            Ver Tienda
+          </a>
+
+          <button class="btn-header-action" onclick="openConfigModal()" title="Configuración de Envíos y Firebase">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Ajustes
+          </button>
+
+          <button class="btn-header-action btn-logout" onclick="handleLogout()" title="Cerrar sesión">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Salir
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Franja informativa de Validación de Pagos y WhatsApp -->
+    <div class="admin-info-strip">
+      <div class="admin-info-content">
+        <div class="info-items-left">
+          <span class="info-tag">
+            💳 Alias Bancario: <span class="info-copy-chip" onclick="copyToClipboard('CLICKAGRO', 'Alias copiado!')">CLICKAGRO 📋</span>
+          </span>
+          <span class="info-tag">
+            👤 Titular: <strong>MARIAELINAPIRIZ</strong>
+          </span>
+          <span class="info-tag">
+            📲 WhatsApp Validación: <a href="https://wa.me/5491123663993" target="_blank" style="color: #86efac; text-decoration: underline; font-weight: 700;">+54 11 2366-3993</a>
+          </span>
+        </div>
+        <div>
+          <span>📁 Archivo Digital Activo: <strong>Agenda agro 2027.pdf</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenido Principal del Dashboard -->
+    <main class="admin-main">
+      
+      <!-- Tarjetas de Métricas Rápidas -->
+      <section class="metrics-grid">
+        <div class="metric-card" onclick="switchDashboardTab('fisica')" style="cursor: pointer;" title="Ver pedidos de Agenda Física">
+          <div class="metric-data">
+            <h3>Agenda Física</h3>
+            <div id="metric-fisica-count" class="metric-number">0</div>
+          </div>
+          <div class="metric-icon-box blue">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+          </div>
+        </div>
+
+        <div class="metric-card" onclick="switchDashboardTab('digital')" style="cursor: pointer;" title="Ver pedidos de Agenda Digital">
+          <div class="metric-data">
+            <h3>Agenda Digital</h3>
+            <div id="metric-digital-count" class="metric-number">0</div>
+          </div>
+          <div class="metric-icon-box green">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-data">
+            <h3>Digitales Enviadas</h3>
+            <div id="metric-digital-sent" class="metric-number">0</div>
+          </div>
+          <div class="metric-icon-box purple">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-data">
+            <h3>Pagos Confirmados</h3>
+            <div id="metric-pagos-confirmados" class="metric-number">0</div>
+          </div>
+          <div class="metric-icon-box amber">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- BARRA DE PESTAÑAS (TABS) -->
+      <section class="tabs-header-wrapper">
+        <ul class="nav-tabs-list">
+          <li>
+            <button id="btn-tab-fisica" class="tab-button active" onclick="switchDashboardTab('fisica')">
+              📦 AGENDA FÍSICA
+              <span id="badge-tab-fisica" class="tab-badge-counter">0</span>
+            </button>
+          </li>
+          <li>
+            <button id="btn-tab-digital" class="tab-button" onclick="switchDashboardTab('digital')">
+              📱 AGENDA DIGITAL
+              <span id="badge-tab-digital" class="tab-badge-counter">0</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-actions-right">
+          <button class="btn-tab-action" onclick="exportCurrentTabCSV()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Exportar CSV / Excel
+          </button>
+          <button class="btn-tab-action primary" onclick="openNewOrderModal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Cargar Pedido Manual
+          </button>
+        </div>
+      </section>
+
+      <!-- BARRA DE BÚSQUEDA Y FILTRO RÁPIDO -->
+      <section class="filter-bar">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="admin-search-input" class="search-input" placeholder="Buscar por nombre, email, teléfono, ciudad..." oninput="handleSearchChange()" />
+        </div>
+
+        <div class="filter-options">
+          <label style="font-size: 13px; font-weight: 600; color: var(--color-text-muted);">Estado de Pago:</label>
+          <select id="filter-payment-status" class="filter-select" onchange="handlePaymentFilterChange()">
+            <option value="todos">Todos los estados</option>
+            <option value="Confirmado">Confirmado (Comprobante OK)</option>
+            <option value="Registrado">Registrado (En espera de comprobante)</option>
+            <option value="Pendiente">Pendiente</option>
+          </select>
+
+          <button class="btn-tab-action" onclick="resetFilters()" title="Restablecer filtros">
+            Limpiar
+          </button>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- PESTAÑA 1: AGENDA FÍSICA                       -->
+      <!-- ============================================== -->
+      <div id="panel-tab-fisica" class="tab-content-panel active">
+        <div class="data-table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Fecha / ID</th>
+                <th>Nombre</th>
+                <th>Teléfono</th>
+                <th>Email</th>
+                <th>Dirección Completa de Envío</th>
+                <th>Localidad</th>
+                <th>Provincia</th>
+                <th>Código Postal</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-pedidos-fisica">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+          <div id="empty-state-fisica" class="empty-state" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon></svg>
+            <h4>No se encontraron pedidos de Agenda Física</h4>
+            <p>Los formularios completados desde la web aparecerán aquí automáticamente.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- PESTAÑA 2: AGENDA DIGITAL                      -->
+      <!-- ============================================== -->
+      <div id="panel-tab-digital" class="tab-content-panel">
+        <div class="data-table-container">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Fecha / ID</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-pedidos-digital">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+          <div id="empty-state-digital" class="empty-state" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            <h4>No se encontraron pedidos de Agenda Digital</h4>
+            <p>Los formularios completados desde la web aparecerán aquí automáticamente.</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CARGAR PEDIDO MANUAL                              -->
+  <!-- ======================================================== -->
+  <div id="modal-new-order" class="admin-modal">
+    <div class="admin-modal-card">
+      <div class="modal-head">
+        <h3>Cargar Pedido Manual</h3>
+        <button class="modal-close-icon" onclick="closeModal('modal-new-order')">&times;</button>
+      </div>
+      <form onsubmit="handleSaveManualOrder(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Tipo de Edición:</label>
+            <select id="man-tipo" onchange="toggleManualOrderFields()">
+              <option value="fisica">Agenda Física ($150.000 - Con Envío)</option>
+              <option value="digital">Agenda Digital ($50.000 - Archivo PDF)</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nombre y Apellido *</label>
+              <input type="text" id="man-nombre" required />
+            </div>
+            <div class="form-group">
+              <label>Teléfono / WhatsApp *</label>
+              <input type="text" id="man-tel" placeholder="Ej: 11 2366 3993" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="man-email" placeholder="cliente@ejemplo.com" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Estado de Pago</label>
+              <select id="man-estado-pago">
+                <option value="Confirmado">Confirmado (Comprobante OK)</option>
+                <option value="Registrado">Registrado</option>
+                <option value="Pendiente">Pendiente</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Modalidad de Pago</label>
+              <input type="text" id="man-cuotas" value="1 pago por transferencia" />
+            </div>
+          </div>
+
+          <!-- Campos específicos para Física -->
+          <div id="man-fields-fisica">
+            <div class="form-group">
+              <label>DNI o CUIT (Para despacho)</label>
+              <input type="text" id="man-dni" />
+            </div>
+            <div class="form-group">
+              <label>Dirección de Entrega</label>
+              <input type="text" id="man-direccion" placeholder="Calle, número, depto" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Localidad / Ciudad</label>
+                <input type="text" id="man-ciudad" />
+              </div>
+              <div class="form-group">
+                <label>Provincia</label>
+                <input type="text" id="man-provincia" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Código Postal</label>
+                <input type="text" id="man-cp" />
+              </div>
+              <div class="form-group">
+                <label>Aclaraciones / Tranquera</label>
+                <input type="text" id="man-notas" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-tab-action" onclick="closeModal('modal-new-order')">Cancelar</button>
+          <button type="submit" class="btn-tab-action primary">Guardar Pedido</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: AJUSTES Y CONFIGURACIÓN                           -->
+  <!-- ======================================================== -->
+  <div id="modal-config" class="admin-modal">
+    <div class="admin-modal-card" style="max-width: 600px;">
+      <div class="modal-head">
+        <h3>Ajustes del Sistema & Servicios</h3>
+        <button class="modal-close-icon" onclick="closeModal('modal-config')">&times;</button>
+      </div>
+      <form onsubmit="handleSaveConfig(event)">
+        <!-- Campo username oculto para accesibilidad de gestores de credenciales según pauta Chromium / W3C -->
+        <input type="text" name="username" value="admin" autocomplete="username" style="display: none;" aria-hidden="true" tabindex="-1" />
+        <div class="modal-body">
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #166534;">
+            ✓ <strong>Modo Activo:</strong> El sistema guarda los pedidos en la base de datos local y en la nube en tiempo real.
+          </div>
+
+          <h4 style="font-size: 14px; margin-bottom: 8px; color: var(--color-primary);">Servicio de Envío de Email para Agenda Digital</h4>
+          <div class="form-group">
+            <label>Proveedor de Correo:</label>
+            <select id="cfg-email-provider" onchange="toggleEmailProviderFields()">
+              <option value="direct">Envío Directo Click Agro (Recomendado)</option>
+              <option value="resend">Resend API (Soporta adjuntos de hasta 10 MB)</option>
+              <option value="emailjs">EmailJS</option>
+              <option value="webhook">Webhook Personalizado (Make / Zapier / Backend)</option>
+            </select>
+          </div>
+
+          <div id="cfg-field-resend" style="display: none;">
+            <div class="form-group">
+              <label>Resend API Key:</label>
+              <input type="password" id="cfg-resend-key" placeholder="re_123456789..." autocomplete="new-password" />
+            </div>
+          </div>
+
+          <div id="cfg-field-emailjs" style="display: none;">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Service ID:</label>
+                <input type="text" id="cfg-emailjs-service" />
+              </div>
+              <div class="form-group">
+                <label>Template ID:</label>
+                <input type="text" id="cfg-emailjs-template" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Public Key:</label>
+              <input type="text" id="cfg-emailjs-key" />
+            </div>
+          </div>
+
+          <div id="cfg-field-webhook" style="display: none;">
+            <div class="form-group">
+              <label>URL del Webhook de Envío:</label>
+              <input type="url" id="cfg-webhook-url" placeholder="https://api.tudominio.com/send-pdf" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Enlace del Archivo PDF (Agenda agro 2027.pdf):</label>
+            <input type="text" id="cfg-pdf-url" value="https://academiaclickagro.com.ar/agenda/Agenda%20agro%202027.pdf" />
+          </div>
+
+          <div style="border-top: 1px solid var(--color-border); padding-top: 14px; margin-top: 14px;">
+            <button type="button" class="btn-tab-action" style="color: #dc2626;" onclick="handleResetDemoData()">
+              🔄 Restaurar Datos de Demostración
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-tab-action" onclick="closeModal('modal-config')">Cancelar</button>
+          <button type="submit" class="btn-tab-action primary">Guardar Ajustes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE DESPACHO DE EMAIL PARA AGENDA DIGITAL -->
+  <div id="modal-send-dispatch" class="modal-overlay">
+    <div class="modal-card" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3>✉️ Despachar Agenda Agro 2027 Digital</h3>
+        <button class="modal-close-icon" onclick="closeModal('modal-send-dispatch')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <div style="font-weight: 700; color: #166534; font-size: 14px; margin-bottom: 4px;">Destinatario:</div>
+          <div id="dispatch-buyer-info" style="font-size: 14px; color: #1e3d2f;"></div>
+        </div>
+
+        <p style="font-size: 13px; color: #475569; margin-bottom: 14px;">
+          Elegí cómo deseas entregar el archivo <strong>Agenda agro 2027.pdf</strong> al comprador:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+          <a id="btn-dispatch-gmail" href="#" target="_blank" style="text-decoration: none; justify-content: center; background: #ea4335; border: none; color: #ffffff; padding: 12px 16px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            Abrir Gmail Oficial (Redactado y Listo)
+          </a>
+
+          <a id="btn-dispatch-wsp" href="#" target="_blank" style="text-decoration: none; justify-content: center; background: #25d366; border: none; color: #ffffff; padding: 12px 16px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>
+            Enviar Enlace de Descarga por WhatsApp
+          </a>
+
+          <button id="btn-dispatch-mark-sent" type="button" style="padding: 12px; font-size: 13px; font-weight: 600; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 8px; cursor: pointer;" onclick="confirmCurrentDispatchSent()">
+            ✔ Marcar como Enviado en el Panel y Supabase
+          </button>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #64748b;">
+          💡 <strong>¿Envío 100% automático en segundo plano?</strong><br>
+          Podés ingresar una API Key de <a href="https://resend.com" target="_blank" style="color: #16a34a; font-weight: 600;">Resend (gratuita)</a> en <a href="#" onclick="closeModal('modal-send-dispatch'); openConfigModal(); return false;" style="color: #16a34a; font-weight: 600;">⚙️ Configuración</a> para que los correos se envíen solos sin pasar por Gmail.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-tab-action" onclick="closeModal('modal-send-dispatch')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor de Toasts -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT DEL PANEL Y GESTIÓN                           -->
+  <!-- ======================================================== -->
+  <script>
+    // Variables globales
+    let currentUser = null;
+    let currentTab = 'fisica';
+    let searchQuery = '';
+    let filterPayment = 'todos';
+
+    // Inicialización al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof initSupabase === 'function') {
+        initSupabase();
+      }
+      initAuthObserver();
+      setupStorageListener();
+
+      // Sincronizar pedidos con la API Serverless de Vercel (/api/pedidos)
+      syncOrdersFromApi();
+
+      // Sincronizar con Supabase Cloud y activar Realtime
+      if (typeof fetchOrdersFromSupabase === 'function') {
+        fetchOrdersFromSupabase().then(() => {
+          if (currentUser) renderDashboard();
+        });
+      }
+      if (typeof subscribeToSupabaseRealtime === 'function') {
+        subscribeToSupabaseRealtime(() => {
+          if (currentUser) {
+            syncOrdersFromApi();
+            renderDashboard();
+          }
+        });
+      }
+    });
+
+    // ── SINCRONIZACIÓN CON ENDPOINTS SERVERLESS /api/pedidos ──
+    async function syncOrdersFromApi() {
+      try {
+        const [resFisica, resDigital] = await Promise.all([
+          fetch('/api/pedidos?tipo=fisica').then(r => r.json()).catch(() => null),
+          fetch('/api/pedidos?tipo=digital').then(r => r.json()).catch(() => null)
+        ]);
+
+        let updated = false;
+
+        if (resFisica && resFisica.success && Array.isArray(resFisica.pedidos)) {
+          const current = getPhysicalOrders();
+          const map = new Map();
+          resFisica.pedidos.forEach(p => map.set(p.id, p));
+          current.forEach(p => { if (!map.has(p.id)) map.set(p.id, p); });
+          localStorage.setItem('clickagro_orders_fisica_v1', JSON.stringify(Array.from(map.values())));
+          updated = true;
+        }
+
+        if (resDigital && resDigital.success && Array.isArray(resDigital.pedidos)) {
+          const current = getDigitalOrders();
+          const map = new Map();
+          resDigital.pedidos.forEach(p => map.set(p.id, p));
+          current.forEach(p => { if (!map.has(p.id)) map.set(p.id, p); });
+          localStorage.setItem('clickagro_orders_digital_v1', JSON.stringify(Array.from(map.values())));
+          updated = true;
+        }
+
+        if (updated && currentUser) {
+          renderDashboard();
+        }
+      } catch (err) {
+        console.warn('Error sincronizando con /api/pedidos:', err);
+      }
+    }
+
+    // Cambiar de pantalla principal
+    function showScreen(screenId) {
+      document.querySelectorAll('.view-screen').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(screenId);
+      if (target) target.classList.add('active');
+    }
+
+    // ── GESTIÓN DE AUTENTICACIÓN & RECHAZO DE ACCESO ──
+    function initAuthObserver() {
+      // Verificar si hay sesión guardada en localStorage o sessionStorage
+      const savedUserEmail = localStorage.getItem('clickagro_admin_session_email') || sessionStorage.getItem('clickagro_admin_session_email');
+      if (savedUserEmail) {
+        validateAndGrantAccess(savedUserEmail);
+      } else {
+        showScreen('screen-login');
+      }
+
+      // Observer de Supabase Auth si está inicializado
+      const client = typeof initSupabase === 'function' ? initSupabase() : null;
+      if (client && client.auth) {
+        try {
+          client.auth.onAuthStateChange((event, session) => {
+            if (session && session.user && session.user.email) {
+              validateAndGrantAccess(session.user.email);
+            }
+          });
+        } catch (e) {
+          console.warn('Supabase Auth listener en espera:', e);
+        }
+      }
+    }
+
+    // Validación estricta de cuentas permitidas
+    function validateAndGrantAccess(email) {
+      const normalizedEmail = (email || '').trim().toLowerCase();
+
+      // Chequeo estricto contra la lista blanca oficial
+      const isAuthorized = AUTHORIZED_ADMIN_EMAILS.some(e => e.toLowerCase() === normalizedEmail);
+
+      if (!isAuthorized) {
+        // RECHAZO INMEDIATO DE ACCESO
+        console.warn('ACCESO DENEGADO para:', email);
+        if (window.firebase && firebase.apps && firebase.apps.length > 0 && typeof firebase.auth === 'function' && firebase.auth().currentUser) {
+          firebase.auth().signOut().catch(() => {});
+        }
+        sessionStorage.removeItem('clickagro_admin_session_email');
+        localStorage.removeItem('clickagro_admin_session_email');
+        
+        document.getElementById('denied-email-display').textContent = email || 'Cuenta no autenticada';
+        showScreen('screen-denied');
+        showToast('Acceso Denegado: Cuenta no autorizada', 'error');
+        return false;
+      }
+
+      // ACCESO PERMITIDO
+      currentUser = { email: normalizedEmail };
+      sessionStorage.setItem('clickagro_admin_session_email', normalizedEmail);
+      localStorage.setItem('clickagro_admin_session_email', normalizedEmail);
+      document.getElementById('admin-user-email').textContent = normalizedEmail;
+
+      showScreen('screen-dashboard');
+
+      // Si la URL contiene #digital, abrir directamente la pestaña de Agenda Digital
+      const hash = (window.location.hash || '').toLowerCase();
+      if (hash.includes('digital')) {
+        switchDashboardTab('digital');
+      } else {
+        renderDashboard();
+      }
+
+      showToast(`Bienvenido al panel, ${normalizedEmail}`, 'success');
+      return true;
+    }
+
+    // Login mediante Google Sign-In (Supabase / Acceso Directo)
+    async function handleGoogleSignIn() {
+      const client = typeof initSupabase === 'function' ? initSupabase() : null;
+      if (client && client.auth) {
+        try {
+          const { error } = await client.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname
+            }
+          });
+          if (error) throw error;
+        } catch (err) {
+          console.warn('Google OAuth Supabase no configurado, usando acceso por cuenta autorizada:', err.message);
+          const selectedEmail = document.getElementById('quick-auth-email')?.value || AUTHORIZED_ADMIN_EMAILS[0];
+          validateAndGrantAccess(selectedEmail);
+        }
+      } else {
+        const selectedEmail = document.getElementById('quick-auth-email')?.value || AUTHORIZED_ADMIN_EMAILS[0];
+        validateAndGrantAccess(selectedEmail);
+      }
+    }
+
+    // Login directo con cuenta autorizada seleccionada
+    function handleDirectAuthorizedLogin() {
+      const selected = document.getElementById('quick-auth-email').value;
+      validateAndGrantAccess(selected);
+    }
+
+    // Login mediante verificación manual de correo
+    function handleCustomEmailLogin() {
+      const input = document.getElementById('custom-auth-email');
+      const email = input ? input.value.trim() : '';
+      if (!email) {
+        showToast('Por favor ingresá una dirección de correo.', 'error');
+        return;
+      }
+      validateAndGrantAccess(email);
+    }
+
+    // Cerrar sesión
+    function handleLogout() {
+      const client = typeof initSupabase === 'function' ? initSupabase() : null;
+      if (client && client.auth) {
+        client.auth.signOut().catch(() => {});
+      }
+      sessionStorage.removeItem('clickagro_admin_session_email');
+      localStorage.removeItem('clickagro_admin_session_email');
+      currentUser = null;
+      showScreen('screen-login');
+      showToast('Sesión cerrada correctamente', 'success');
+    }
+
+    // ── CAMBIO DE PESTAÑAS ──
+    function switchDashboardTab(tab) {
+      currentTab = tab;
+      
+      const btnFisica = document.getElementById('btn-tab-fisica');
+      const btnDigital = document.getElementById('btn-tab-digital');
+      const panelFisica = document.getElementById('panel-tab-fisica');
+      const panelDigital = document.getElementById('panel-tab-digital');
+
+      if (tab === 'fisica') {
+        btnFisica.classList.add('active');
+        btnDigital.classList.remove('active');
+        panelFisica.classList.add('active');
+        panelDigital.classList.remove('active');
+      } else {
+        btnDigital.classList.add('active');
+        btnFisica.classList.remove('active');
+        panelDigital.classList.add('active');
+        panelFisica.classList.remove('active');
+      }
+
+      renderDashboard();
+    }
+
+    // ── RENDERIZADO DEL DASHBOARD Y TABLAS ──
+    function renderDashboard() {
+      renderMetrics();
+      renderPhysicalTable();
+      renderDigitalTable();
+    }
+
+    function renderMetrics() {
+      const fisicaOrders = getPhysicalOrders();
+      const digitalOrders = getDigitalOrders();
+
+      const sentCount = digitalOrders.filter(o => o.enviado).length;
+      const confirmedCount = [...fisicaOrders, ...digitalOrders].filter(o => o.estadoPago === 'Confirmado').length;
+
+      document.getElementById('metric-fisica-count').textContent = fisicaOrders.length;
+      document.getElementById('metric-digital-count').textContent = digitalOrders.length;
+      document.getElementById('metric-digital-sent').textContent = sentCount;
+      document.getElementById('metric-pagos-confirmados').textContent = confirmedCount;
+
+      document.getElementById('badge-tab-fisica').textContent = fisicaOrders.length;
+      document.getElementById('badge-tab-digital').textContent = digitalOrders.length;
+    }
+
+    // Renderizar Pestaña 1: AGENDA FÍSICA
+    function renderPhysicalTable() {
+      const tbody = document.getElementById('tbody-pedidos-fisica');
+      const emptyState = document.getElementById('empty-state-fisica');
+      let orders = getPhysicalOrders();
+
+      // Aplicar filtros
+      orders = filterOrdersList(orders);
+
+      if (!orders || orders.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      tbody.innerHTML = orders.map(order => {
+        const telSanitized = (order.tel || order.telefono || '').replace(/\D/g, '');
+        const wspUrl = `https://wa.me/${telSanitized.startsWith('54') ? telSanitized : '549' + telSanitized}?text=Hola%20${encodeURIComponent(order.nombre)}!%20Te%20escribimos%20de%20Click%20Agro%20por%20tu%20Agenda%20Agro%202027.`;
+        const addressBlock = `${order.direccion || 'Sin dirección'}, ${order.ciudad || order.localidad || ''} (${order.provincia || ''}) - CP ${order.cp || ''}`;
+
+        return `
+          <tr id="row-${order.id}">
+            <td>
+              <div style="font-weight: 700; color: #1e3d2f;">${order.id}</div>
+              <div style="font-size: 11px; color: #64748b;">${order.fecha || '-'}</div>
+            </td>
+            <td class="buyer-info">
+              <strong>${escapeHtml(order.nombre)}</strong>
+              ${order.dni ? `<span style="font-size: 11px; color: #64748b;">DNI: ${escapeHtml(order.dni)}</span>` : ''}
+            </td>
+            <td>
+              <div class="contact-cell">
+                <span>${escapeHtml(order.tel || order.telefono || '-')}</span>
+                ${(order.tel || order.telefono) ? `<a class="btn-wsp-direct" href="${wspUrl}" target="_blank">📲 WhatsApp</a>` : ''}
+              </div>
+            </td>
+            <td>
+              <span style="font-size: 12px; color: #334155;">${escapeHtml(order.email || 'Sin email')}</span>
+            </td>
+            <td>
+              <div class="shipping-box">
+                <div class="address-line">📍 ${escapeHtml(order.direccion || '-')}</div>
+                ${order.notas ? `<div class="notes-badge">📝 ${escapeHtml(order.notas)}</div>` : ''}
+              </div>
+            </td>
+            <td>
+              <strong>${escapeHtml(order.ciudad || order.localidad || '-')}</strong>
+            </td>
+            <td>
+              <span>${escapeHtml(order.provincia || '-')}</span>
+            </td>
+            <td>
+              <span style="font-family: monospace; font-weight: 700; color: #1e3d2f;">${escapeHtml(order.cp || '-')}</span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <button class="btn-tab-action" style="padding: 3px 8px; font-size: 11px;" onclick="copyToClipboard('${escapeJsString(addressBlock)}', 'Dirección copiada!')" title="Copiar dirección completa">
+                  📋 Guía
+                </button>
+                <button class="btn-resend-discrete" style="color: #ef4444;" title="Eliminar pedido" onclick="confirmDeleteOrder('fisica', '${order.id}')">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Renderizar Pestaña 2: AGENDA DIGITAL
+    function renderDigitalTable() {
+      const tbody = document.getElementById('tbody-pedidos-digital');
+      const emptyState = document.getElementById('empty-state-digital');
+      let orders = getDigitalOrders();
+
+      // Aplicar filtros
+      orders = filterOrdersList(orders);
+
+      if (!orders || orders.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      tbody.innerHTML = orders.map(order => {
+        return `
+          <tr id="row-${order.id}">
+            <td>
+              <div style="font-weight: 700; color: #1e3d2f;">${order.id}</div>
+              <div style="font-size: 11px; color: #64748b;">${order.fecha || '-'}</div>
+            </td>
+            <td class="buyer-info">
+              <strong>${escapeHtml(order.nombre)}</strong>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <strong style="color: #1e3d2f; font-size: 13px;">${escapeHtml(order.email || '-')}</strong>
+                <button class="btn-resend-discrete" onclick="copyToClipboard('${escapeJsString(order.email)}', 'Email copiado!')" title="Copiar email">
+                  📋
+                </button>
+              </div>
+            </td>
+            <td id="status-cell-${order.id}">
+              ${order.enviado ? `
+                <span class="status-badge confirmado" style="font-size: 11px;">
+                  ✔ Enviado
+                </span>
+                ${order.fechaEnvio ? `<div style="font-size: 10px; color: #15803d; margin-top: 3px;">${order.fechaEnvio}</div>` : ''}
+              ` : `
+                <span class="status-badge pendiente" style="font-size: 11px;">
+                  ⏳ Pendiente
+                </span>
+              `}
+            </td>
+            <td id="action-cell-${order.id}">
+              <div class="action-send-wrapper">
+                ${order.enviado ? `
+                  <div class="badge-sent-check" style="display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>✔ Enviado</span>
+                  </div>
+                  <button class="btn-resend-discrete" title="Reenviar archivo por correo" onclick="handleSendDigitalAgenda('${order.id}', true)">
+                    🔄
+                  </button>
+                ` : `
+                  <button id="btn-send-${order.id}" class="btn-send-digital" onclick="handleSendDigitalAgenda('${order.id}', false)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    ENVIAR
+                  </button>
+                `}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Filtrar pedidos por buscador y estado de pago
+    function filterOrdersList(orders) {
+      if (!orders) return [];
+      return orders.filter(o => {
+        // Filtro de estado
+        if (filterPayment !== 'todos') {
+          if (o.estadoPago !== filterPayment) return false;
+        }
+
+        // Filtro de búsqueda
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          const matchName = (o.nombre || '').toLowerCase().includes(q);
+          const matchEmail = (o.email || '').toLowerCase().includes(q);
+          const matchTel = (o.tel || o.telefono || '').toLowerCase().includes(q);
+          const matchCity = (o.ciudad || o.localidad || '').toLowerCase().includes(q);
+          const matchAddress = (o.direccion || '').toLowerCase().includes(q);
+          const matchId = (o.id || '').toLowerCase().includes(q);
+          return matchName || matchEmail || matchTel || matchCity || matchAddress || matchId;
+        }
+
+        return true;
+      });
+    }
+
+    // ── LÓGICA DEL BOTÓN "ENVIAR" EN AGENDA DIGITAL (FETCH /api/send-agenda) ──
+    let currentDispatchOrderId = null;
+
+    async function handleSendDigitalAgenda(orderId, isResend = false) {
+      const orders = getDigitalOrders();
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      if (!order.email) {
+        showToast('El comprador no tiene una casilla de correo registrada.', 'error');
+        return;
+      }
+
+      if (isResend) {
+        if (!confirm(`¿Deseás reenviar el archivo "Agenda agro 2027.pdf" a ${order.email}?`)) {
+          return;
+        }
+      }
+
+      const btn = document.getElementById(`btn-send-${order.id}`);
+      const actionCell = document.getElementById(`action-cell-${order.id}`);
+
+      // Estado visual: Cargando...
+      if (btn) {
+        btn.classList.add('loading');
+        btn.disabled = true;
+        btn.innerHTML = `<div class="spinner"></div> Cargando...`;
+      }
+
+      try {
+        // Ejecución de la petición a la API Serverless con Resend
+        const resp = await fetch('/api/send-agenda', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: order.email,
+            nombre: order.nombre,
+            pedidoId: order.id
+          })
+        });
+
+        const data = await resp.json().catch(() => ({}));
+
+        if (resp.ok && data.success) {
+          // Marcar orden como enviada en el gestor local
+          markDigitalOrderSent(orderId, currentUser?.email || 'admin');
+
+          // Al confirmar la respuesta exitosa del servidor:
+          // Oculta el botón y muestra un tilde verde visible (✔ Enviado)
+          if (actionCell) {
+            actionCell.innerHTML = `
+              <div class="action-send-wrapper">
+                <div class="badge-sent-check" style="display: inline-flex; align-items: center; gap: 6px; background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 12px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>✔ Enviado</span>
+                </div>
+                <button class="btn-resend-discrete" title="Reenviar archivo" onclick="handleSendDigitalAgenda('${order.id}', true)">
+                  🔄
+                </button>
+              </div>
+            `;
+          }
+
+          // Actualizar estado en celda de Estado
+          const statusCell = document.getElementById(`status-cell-${order.id}`);
+          if (statusCell) {
+            statusCell.innerHTML = `
+              <span class="status-badge confirmado" style="font-size: 11px;">
+                ✔ Enviado
+              </span>
+              <div style="font-size: 10px; color: #15803d; margin-top: 3px;">Ahora</div>
+            `;
+          }
+
+          renderMetrics();
+          showToast(`✔ Agenda Agro 2027 enviada exitosamente a ${order.email}`, 'success');
+
+        } else {
+          const errorMsg = (data && data.error) ? data.error : 'No se pudo enviar el correo';
+          showToast(`Error al enviar: ${errorMsg}`, 'error');
+          console.warn('Detalle de error en /api/send-agenda:', data);
+
+          // Si falla, permitir reintentar o enviar manualmente con modal de contingencia
+          currentDispatchOrderId = orderId;
+          const emailData = ClickAgroMailer.buildEmailData(order, currentUser);
+          document.getElementById('dispatch-buyer-info').innerHTML = `
+            <strong>${escapeHtml(order.nombre)}</strong> &lt;${escapeHtml(order.email)}&gt;<br>
+            <span style="font-size: 12px; color: #64748b;">Pedido: ${order.id} | Archivo: Agenda agro 2027.pdf</span>
+            <div style="margin-top: 8px; font-size: 12px; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 8px 10px;">
+              ⚠️ <strong>Motivo informado:</strong> ${escapeHtml(errorMsg)}
+            </div>
+          `;
+          document.getElementById('btn-dispatch-gmail').href = emailData.gmailUrl;
+          document.getElementById('btn-dispatch-wsp').href = emailData.wspUrl;
+          openModal('modal-send-dispatch');
+
+          if (btn) {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            btn.innerHTML = isResend ? '🔄 Reenviar' : 'ENVIAR';
+          }
+        }
+      } catch (err) {
+        console.error('Error de red al conectar con /api/send-agenda:', err);
+        showToast('Error al conectar con /api/send-agenda. Comprobá tu conexión.', 'error');
+        if (btn) {
+          btn.classList.remove('loading');
+          btn.disabled = false;
+          btn.innerHTML = isResend ? '🔄 Reenviar' : 'ENVIAR';
+        }
+      }
+    }
+
+    function confirmCurrentDispatchSent() {
+      if (currentDispatchOrderId) {
+        markDigitalOrderSent(currentDispatchOrderId, currentUser?.email);
+        renderDashboard();
+        closeModal('modal-send-dispatch');
+        showToast('✔ Pedido marcado como Enviado correctamente.', 'success');
+      }
+    }
+
+    // ── CAMBIOS DE ESTADO EN TIEMPO REAL ──
+    function handleChangePhysicalStatus(id, newStatus) {
+      updatePhysicalOrderStatus(id, newStatus);
+      renderMetrics();
+      showToast(`Estado de pago actualizado a: ${newStatus}`, 'success');
+    }
+
+    function handleChangePhysicalDispatch(id, newStatus) {
+      updatePhysicalOrderDispatch(id, newStatus);
+      showToast(`Estado de despacho actualizado a: ${newStatus}`, 'success');
+    }
+
+    function handleChangeDigitalPaymentStatus(id, newStatus) {
+      updateDigitalOrderStatus(id, newStatus);
+      renderMetrics();
+      showToast(`Estado de pago digital actualizado a: ${newStatus}`, 'success');
+    }
+
+    function promptTrackingNumber(id) {
+      const order = getPhysicalOrders().find(o => o.id === id);
+      const current = order?.numeroGuia || '';
+      const num = prompt('Ingresá el número de guía o código de seguimiento postal:', current);
+      if (num !== null) {
+        updatePhysicalOrderDispatch(id, order?.estadoDespacho || 'Despachado', num.trim());
+        renderPhysicalTable();
+        showToast('Número de guía actualizado', 'success');
+      }
+    }
+
+    function confirmDeleteOrder(type, id) {
+      if (confirm('¿Estás seguro de que deseás eliminar este registro?')) {
+        deleteOrder(type, id);
+        renderDashboard();
+        showToast('Registro eliminado', 'success');
+      }
+    }
+
+    // ── BÚSQUEDA Y FILTROS ──
+    function handleSearchChange() {
+      searchQuery = document.getElementById('admin-search-input').value.trim();
+      if (currentTab === 'fisica') renderPhysicalTable();
+      else renderDigitalTable();
+    }
+
+    function handlePaymentFilterChange() {
+      filterPayment = document.getElementById('filter-payment-status').value;
+      if (currentTab === 'fisica') renderPhysicalTable();
+      else renderDigitalTable();
+    }
+
+    function resetFilters() {
+      document.getElementById('admin-search-input').value = '';
+      document.getElementById('filter-payment-status').value = 'todos';
+      searchQuery = '';
+      filterPayment = 'todos';
+      renderDashboard();
+    }
+
+    function exportCurrentTabCSV() {
+      exportOrdersToCSV(currentTab);
+      showToast(`Exportando archivo CSV para ${currentTab === 'fisica' ? 'Agenda Física' : 'Agenda Digital'}...`, 'success');
+    }
+
+    // ── MODALES ──
+    function openModal(id) {
+      const m = document.getElementById(id);
+      if (m) m.classList.add('open');
+    }
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (m) m.classList.remove('open');
+    }
+
+    function openNewOrderModal() {
+      document.getElementById('man-tipo').value = currentTab === 'digital' ? 'digital' : 'fisica';
+      toggleManualOrderFields();
+      openModal('modal-new-order');
+    }
+
+    function toggleManualOrderFields() {
+      const tipo = document.getElementById('man-tipo').value;
+      const fisicaFields = document.getElementById('man-fields-fisica');
+      if (tipo === 'fisica') {
+        fisicaFields.style.display = 'block';
+      } else {
+        fisicaFields.style.display = 'none';
+      }
+    }
+
+    function handleSaveManualOrder(e) {
+      e.preventDefault();
+      const tipo = document.getElementById('man-tipo').value;
+      const nombre = document.getElementById('man-nombre').value.trim();
+      const tel = document.getElementById('man-tel').value.trim();
+      const email = document.getElementById('man-email').value.trim();
+      const estadoPago = document.getElementById('man-estado-pago').value;
+      const cuotas = document.getElementById('man-cuotas').value.trim();
+
+      if (tipo === 'fisica') {
+        addPhysicalOrder({
+          nombre,
+          tel,
+          email,
+          estadoPago,
+          cuotas: cuotas || '1 pago de $150.000',
+          dni: document.getElementById('man-dni').value.trim(),
+          direccion: document.getElementById('man-direccion').value.trim(),
+          ciudad: document.getElementById('man-ciudad').value.trim(),
+          provincia: document.getElementById('man-provincia').value.trim(),
+          cp: document.getElementById('man-cp').value.trim(),
+          notas: document.getElementById('man-notas').value.trim(),
+          origen: 'manual_admin'
+        });
+      } else {
+        addDigitalOrder({
+          nombre,
+          tel,
+          email,
+          estadoPago,
+          cuotas: cuotas || '1 pago de $50.000',
+          origen: 'manual_admin'
+        });
+      }
+
+      closeModal('modal-new-order');
+      renderDashboard();
+      showToast('Pedido cargado exitosamente', 'success');
+      // Reset form
+      e.target.reset();
+    }
+
+    function openConfigModal() {
+      const cfg = getClickAgroConfig();
+      document.getElementById('cfg-email-provider').value = cfg.emailService?.provider || 'direct';
+      document.getElementById('cfg-resend-key').value = cfg.emailService?.apiKey || '';
+      document.getElementById('cfg-emailjs-service').value = cfg.emailService?.emailJsServiceId || '';
+      document.getElementById('cfg-emailjs-template').value = cfg.emailService?.emailJsTemplateId || '';
+      document.getElementById('cfg-emailjs-key').value = cfg.emailService?.emailJsPublicKey || '';
+      document.getElementById('cfg-webhook-url').value = cfg.emailService?.webhookUrl || '';
+      document.getElementById('cfg-pdf-url').value = cfg.pdfUrl || '';
+
+      toggleEmailProviderFields();
+      openModal('modal-config');
+    }
+
+    function toggleEmailProviderFields() {
+      const prov = document.getElementById('cfg-email-provider').value;
+      document.getElementById('cfg-field-resend').style.display = prov === 'resend' ? 'block' : 'none';
+      document.getElementById('cfg-field-emailjs').style.display = prov === 'emailjs' ? 'block' : 'none';
+      document.getElementById('cfg-field-webhook').style.display = prov === 'webhook' ? 'block' : 'none';
+    }
+
+    function handleSaveConfig(e) {
+      e.preventDefault();
+      const cfg = getClickAgroConfig();
+      cfg.emailService.provider = document.getElementById('cfg-email-provider').value;
+      cfg.emailService.apiKey = document.getElementById('cfg-resend-key').value.trim();
+      cfg.emailService.emailJsServiceId = document.getElementById('cfg-emailjs-service').value.trim();
+      cfg.emailService.emailJsTemplateId = document.getElementById('cfg-emailjs-template').value.trim();
+      cfg.emailService.emailJsPublicKey = document.getElementById('cfg-emailjs-key').value.trim();
+      cfg.emailService.webhookUrl = document.getElementById('cfg-webhook-url').value.trim();
+      cfg.pdfUrl = document.getElementById('cfg-pdf-url').value.trim();
+
+      saveClickAgroConfig(cfg);
+      closeModal('modal-config');
+      showToast('Configuración guardada exitosamente', 'success');
+    }
+
+    function handleResetDemoData() {
+      if (confirm('¿Restablecer los pedidos de prueba iniciales?')) {
+        resetDemoData();
+        closeModal('modal-config');
+        renderDashboard();
+        showToast('Datos de prueba restaurados', 'success');
+      }
+    }
+
+    // Sincronización en vivo entre pestañas/ventanas
+    function setupStorageListener() {
+      window.addEventListener('clickagro-orders-updated', () => {
+        if (currentUser) renderDashboard();
+      });
+      window.addEventListener('storage', () => {
+        if (currentUser) renderDashboard();
+      });
+    }
+
+    // ── UTILIDADES ──
+    function copyToClipboard(text, successMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(successMsg || 'Copiado al portapapeles', 'success');
+        });
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast(successMsg || 'Copiado al portapapeles', 'success');
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `toast-message ${type}`;
+      toast.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          ${type === 'success' ? '<polyline points="20 6 9 17 4 12"></polyline>' : '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>'}
+        </svg>
+        <span>${escapeHtml(message)}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeJsString(str) {
+      if (!str) return '';
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+  </script>
+</body>
+</html>

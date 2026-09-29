@@ -1,0 +1,11 @@
+{
+  "name": "clickagro-agenda-2027",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sistema de ventas, gestión de pedidos y panel de administración para Agenda Agro 2027 · Click Agro",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "dependencies": {}
+}
