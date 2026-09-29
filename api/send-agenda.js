@@ -218,6 +218,8 @@ export default async function handler(req, res) {
         errorMsg = 'Resend (Modo Prueba): Tu cuenta de Resend solo permite enviar correos a tu propia casilla de registro (academiaclickagro@gmail.com). Para despachar a clientes automáticamente, debes verificar el dominio academiaclickagro.com.ar en resend.com/domains. Mientras tanto, puedes despachar este pedido inmediatamente usando Gmail Oficial o WhatsApp.';
       } else if (typeof errorMsg === 'string' && (errorMsg.includes('domain is not verified') || errorMsg.includes('verify a domain') || errorMsg.includes('unverified'))) {
         errorMsg = 'El remitente requiere que el dominio academiaclickagro.com.ar esté verificado en resend.com/domains.';
+      } else if (resendResponse.status === 401 || (typeof errorMsg === 'string' && errorMsg.toLowerCase().includes('api key is invalid'))) {
+        errorMsg = 'La clave RESEND_API_KEY es inválida o no está configurada en Vercel. Ve a resend.com/api-keys para obtener una clave activa (re_...) y configúrala en las Variables de Entorno de Vercel o en Ajustes (⚙️) del Administrador.';
       }
 
       console.warn('Aviso Resend API:', errorMsg);
