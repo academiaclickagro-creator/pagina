@@ -1560,6 +1560,8 @@
         <button class="modal-close-icon" onclick="closeModal('modal-config')">&times;</button>
       </div>
       <form onsubmit="handleSaveConfig(event)">
+        <!-- Campo username oculto para accesibilidad de gestores de credenciales según pauta Chromium / W3C -->
+        <input type="text" name="username" value="admin" autocomplete="username" style="display: none;" aria-hidden="true" tabindex="-1" />
         <div class="modal-body">
           <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #166534;">
             ✓ <strong>Modo Activo:</strong> El sistema guarda los pedidos en la base de datos local y en la nube en tiempo real.
