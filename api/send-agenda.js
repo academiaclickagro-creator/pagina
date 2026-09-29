@@ -189,10 +189,22 @@ export default async function handler(req, res) {
 
     if (!resendResponse.ok) {
       let errorMsg = resendData.message || 'Error en Resend API al enviar el correo.';
-      console.error('Error de Resend:', resendData);
-      return res.status(resendResponse.status).json({
+      let isTestModeRestriction = false;
+
+      if (typeof errorMsg === 'string' && errorMsg.includes('own email address')) {
+        isTestModeRestriction = true;
+        errorMsg = 'Resend (Modo Prueba): Tu cuenta de Resend solo permite enviar correos a tu propia casilla de registro (academiaclickagro@gmail.com). Para despachar a clientes automáticamente, debes verificar el dominio academiaclickagro.com.ar en resend.com/domains. Mientras tanto, puedes despachar este pedido inmediatamente usando Gmail Oficial o WhatsApp.';
+      } else if (typeof errorMsg === 'string' && (errorMsg.includes('domain is not verified') || errorMsg.includes('verify a domain') || errorMsg.includes('unverified'))) {
+        errorMsg = 'El remitente requiere que el dominio academiaclickagro.com.ar esté verificado en resend.com/domains.';
+      }
+
+      console.warn('Aviso Resend API:', errorMsg);
+
+      // Responder con status 200 y success: false para gestión controlada en el panel
+      return res.status(200).json({
         success: false,
         error: errorMsg,
+        isTestModeRestriction: isTestModeRestriction,
         details: resendData
       });
     }
