@@ -62,7 +62,8 @@ export default async function handler(req, res) {
       buyerEmail,
       buyerName,
       orderId,
-      apiKey
+      apiKey,
+      pdfUrl: customPdfUrl
     } = req.body || {};
 
     const targetEmail = (email || buyerEmail || '').trim();
@@ -78,11 +79,11 @@ export default async function handler(req, res) {
     if (!effectiveResendKey) {
       return res.status(400).json({
         success: false,
-        error: 'No se encontró la clave RESEND_API_KEY configurada en el entorno de Vercel.'
+        error: 'No se encontró la clave RESEND_API_KEY. Configurala en las variables de entorno de Vercel o en Ajustes (icono engranaje) del Administrador.'
       });
     }
 
-    const pdfUrl = 'https://academiaclickagro.com.ar/agenda/Agenda%20agro%202027.pdf';
+    const pdfUrl = (customPdfUrl || 'https://academiaclickagro.com.ar/agenda/Agenda%20agro%202027.pdf').trim();
     const pdfName = 'Agenda agro 2027.pdf';
     const subject = '🌾 Tu Agenda Agro 2027 Digital ya está lista · Click Agro';
 
@@ -171,6 +172,27 @@ export default async function handler(req, res) {
     });
 
     let resendData = await resendResponse.json().catch(() => ({}));
+
+    // Si Resend falla porque no pudo descargar el adjunto remoto desde la URL, reintentar sin adjunto (el email ya tiene botón de descarga directa)
+    if (!resendResponse.ok && resendData.message && (
+      resendData.message.toLowerCase().includes('attachment') ||
+      resendData.message.toLowerCase().includes('fetch') ||
+      resendData.message.toLowerCase().includes('download') ||
+      resendData.message.toLowerCase().includes('unreachable')
+    )) {
+      console.warn('Aviso: Falla al descargar adjunto remoto en Resend:', resendData.message);
+      console.warn('Reintentando envío inmediato sin adjunto pesado (el correo incluye el botón de descarga)...');
+      delete resendPayload.attachments;
+      resendResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${effectiveResendKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(resendPayload)
+      });
+      resendData = await resendResponse.json().catch(() => ({}));
+    }
 
     // Si Resend rechaza el dominio porque aún no está verificado en resend.com, intentar fallback a onboarding@resend.dev
     if (!resendResponse.ok && resendData.message && (resendData.message.includes('domain is not verified') || resendData.message.includes('verify a domain') || resendData.message.includes('unverified'))) {
