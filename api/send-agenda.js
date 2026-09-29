@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // Configuración de cabeceras CORS para permitir llamadas desde el panel admin
+  // Configuración de cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -29,11 +29,15 @@ export default async function handler(req, res) {
     const pdfName = 'Agenda agro 2027.pdf';
     const subject = '🌾 Tu Agenda Agro 2027 Digital ya está lista · Click Agro';
 
-    // 1. Si se provee API Key de Resend (o configurada en entorno)
-    const effectiveResendKey = apiKey || process.env.RESEND_API_KEY;
+    const effectiveResendKey = (apiKey || process.env.RESEND_API_KEY || '').trim();
 
     if (effectiveResendKey) {
-      const fromAddress = senderEmail || 'Click Agro <onboarding@resend.dev>';
+      // Regla de Resend: No permite casillas @gmail.com en el 'from'.
+      // Debe ser 'onboarding@resend.dev' o un dominio previamente verificado en Resend.
+      let fromAddress = 'Click Agro <onboarding@resend.dev>';
+      if (senderEmail && !senderEmail.toLowerCase().includes('@gmail.com') && !senderEmail.toLowerCase().includes('@yahoo.') && !senderEmail.toLowerCase().includes('@hotmail.')) {
+        fromAddress = `Click Agro <${senderEmail.trim()}>`;
+      }
 
       const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
@@ -80,6 +84,7 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           from: fromAddress,
+          reply_to: 'academiaclickagro@gmail.com',
           to: [buyerEmail],
           subject: subject,
           html: htmlContent,
@@ -92,13 +97,23 @@ export default async function handler(req, res) {
         })
       });
 
-      const resendData = await resendResponse.json();
+      const resendData = await resendResponse.json().catch(() => ({}));
 
       if (!resendResponse.ok) {
+        let errorMsg = resendData.message || 'Error en Resend API';
+        if (typeof resendData.message === 'string') {
+          if (resendData.message.includes('own email address')) {
+            errorMsg = 'Resend (modo prueba) solo permite enviar correos a la misma casilla con la que creaste tu cuenta en Resend. Para enviar a otros compradores, verifica un dominio propio en resend.com/domains o usa el botón de Gmail Oficial.';
+          } else if (resendData.message.includes('domain is not verified') || resendData.message.includes('verify a domain')) {
+            errorMsg = 'El remitente debe pertenecer a un dominio verificado en Resend o ser onboarding@resend.dev.';
+          }
+        }
+
         return res.status(resendResponse.status).json({
           success: false,
           provider: 'resend',
-          error: resendData
+          error: errorMsg,
+          raw: resendData
         });
       }
 
@@ -110,11 +125,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Si no hay API Key de Resend configurada
     return res.status(200).json({
       success: false,
       needApiKey: true,
-      message: 'No hay una API Key de Resend configurada para envío automático en segundo plano.'
+      error: 'No hay una API Key de Resend configurada en el panel.'
     });
 
   } catch (error) {

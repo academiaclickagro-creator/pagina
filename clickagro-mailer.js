@@ -89,8 +89,15 @@ https://academiaclickagro.com.ar`;
             message: `Correo despachado automáticamente a ${emailData.buyerEmail}`,
             ...emailData
           };
-        } else if (data && data.error) {
-          console.warn('Aviso API Resend:', data.error);
+        } else {
+          const reasonText = (data && data.error) ? (typeof data.error === 'string' ? data.error : JSON.stringify(data.error)) : (apiKey ? 'Error en API Resend' : 'Sin API Key configurada');
+          console.warn('Aviso API Resend:', reasonText);
+          return {
+            success: false,
+            needManualSend: true,
+            reason: reasonText,
+            ...emailData
+          };
         }
       } catch (err) {
         console.warn('No se pudo conectar con /api/send-agenda:', err);
