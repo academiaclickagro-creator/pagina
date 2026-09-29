@@ -2565,7 +2565,7 @@
       // Registrar pedido en el sistema de administración
       if (typeof addDigitalOrder === 'function') {
         try {
-          addDigitalOrder({
+          const registered = addDigitalOrder({
             nombre: nombre,
             email: email,
             tel: tel,
@@ -2573,9 +2573,12 @@
             estadoPago: 'Registrado',
             origen: 'web'
           });
+          console.log('✓ Pedido Digital registrado en ClickAgroStore:', registered);
         } catch (errOrder) {
           console.warn('Error registrando orden digital:', errOrder);
         }
+      } else {
+        console.warn('ClickAgroStore: addDigitalOrder no está disponible en la página.');
       }
 
       const mensaje = `Hola Click Agro! Quiero adquirir la *Agenda Agro 2027 (Edición Digital Editable)* por $50.000.
@@ -2623,7 +2626,7 @@ Por favor, envíenme los datos para realizar el pago y recibir el archivo intera
       // Registrar pedido en el sistema de administración
       if (typeof addPhysicalOrder === 'function') {
         try {
-          addPhysicalOrder({
+          const registered = addPhysicalOrder({
             nombre: nombre,
             dni: dni,
             tel: tel,
@@ -2638,9 +2641,12 @@ Por favor, envíenme los datos para realizar el pago y recibir el archivo intera
             estadoDespacho: 'Pendiente',
             origen: 'web'
           });
+          console.log('✓ Pedido Físico registrado en ClickAgroStore:', registered);
         } catch (errOrder) {
           console.warn('Error registrando orden física:', errOrder);
         }
+      } else {
+        console.warn('ClickAgroStore: addPhysicalOrder no está disponible en la página.');
       }
 
       const mensaje = `Hola Click Agro! Quiero encargar la *Agenda Agro 2027 (Edición Física Impresa)* por $150.000 con *Envío Gratuito a Domicilio*.
