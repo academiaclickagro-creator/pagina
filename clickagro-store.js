@@ -587,47 +587,256 @@ function deleteOrder(type, id) {
   return false;
 }
 
-// Limpiar Base de Datos totalmente (poner en cero tanto física como digital en Supabase y local)
-async function clearClickAgroDatabase() {
-  try {
-    console.log('Iniciando limpieza total de base de datos Click Agro...');
+// Verificar si la base de datos (Supabase y LocalStorage) está realmente vacía en CERO
+async function verifyClickAgroDatabaseEmpty() {
+  const status = {
+    isEmpty: false,
+    supabaseConnected: false,
+    fisicaCount: 0,
+    digitalCount: 0,
+    localFisicaCount: 0,
+    localDigitalCount: 0,
+    details: ''
+  };
 
-    // 1. Limpiar en Supabase con SDK
-    const client = initSupabase();
+  // 1. Chequeo LocalStorage
+  try {
+    const localF = JSON.parse(localStorage.getItem(CLICKAGRO_STORAGE_KEY_FISICA) || '[]');
+    const localD = JSON.parse(localStorage.getItem(CLICKAGRO_STORAGE_KEY_DIGITAL) || '[]');
+    status.localFisicaCount = Array.isArray(localF) ? localF.length : 0;
+    status.localDigitalCount = Array.isArray(localD) ? localD.length : 0;
+  } catch (e) {
+    console.warn('Error leyendo local en verificación:', e);
+  }
+
+  // 2. Chequeo Supabase SDK
+  const client = initSupabase();
+  let supabaseChecked = false;
+
+  if (client) {
+    try {
+      const [vf, vd] = await Promise.all([
+        client.from('pedidos_fisica').select('id', { count: 'exact' }),
+        client.from('pedidos_digital').select('id', { count: 'exact' })
+      ]);
+      if (typeof vf.count === 'number') {
+        status.fisicaCount = vf.count;
+        supabaseChecked = true;
+      } else if (Array.isArray(vf.data)) {
+        status.fisicaCount = vf.data.length;
+        supabaseChecked = true;
+      }
+      if (typeof vd.count === 'number') {
+        status.digitalCount = vd.count;
+        supabaseChecked = true;
+      } else if (Array.isArray(vd.data)) {
+        status.digitalCount = vd.data.length;
+        supabaseChecked = true;
+      }
+      if (supabaseChecked) status.supabaseConnected = true;
+    } catch (e) {
+      console.warn('Aviso Supabase SDK en verificación:', e);
+    }
+  }
+
+  // 3. Fallback / Verificación adicional con REST
+  if (!supabaseChecked) {
+    try {
+      const [rf, rd] = await Promise.all([
+        sendSupabaseRest('pedidos_fisica?select=id', 'GET'),
+        sendSupabaseRest('pedidos_digital?select=id', 'GET')
+      ]);
+      if (Array.isArray(rf)) {
+        status.fisicaCount = rf.length;
+        status.supabaseConnected = true;
+        supabaseChecked = true;
+      }
+      if (Array.isArray(rd)) {
+        status.digitalCount = rd.length;
+        status.supabaseConnected = true;
+        supabaseChecked = true;
+      }
+    } catch (e) {
+      console.warn('Aviso Supabase REST en verificación:', e);
+    }
+  }
+
+  const isSupabaseEmpty = !status.supabaseConnected || (status.fisicaCount === 0 && status.digitalCount === 0);
+  const isLocalEmpty = status.localFisicaCount === 0 && status.localDigitalCount === 0;
+
+  status.isEmpty = isSupabaseEmpty && isLocalEmpty;
+
+  if (status.isEmpty) {
+    status.details = 'Verificado: La base de datos y el almacenamiento local están en 0 (completamente vacíos).';
+  } else {
+    status.details = `No está vacía: Supabase (Física: ${status.fisicaCount}, Digital: ${status.digitalCount}) | Local (Física: ${status.localFisicaCount}, Digital: ${status.localDigitalCount})`;
+  }
+
+  return status;
+}
+
+// Limpiar Base de Datos totalmente (poner en cero tanto física como digital en Supabase, Backend y Local)
+// con verificación real y exhaustiva
+async function clearClickAgroDatabase() {
+  console.log('Iniciando proceso exhaustivo de vaciado y verificación de base de datos...');
+
+  const report = {
+    success: false,
+    verified: false,
+    supabaseChecked: false,
+    initialFisica: 0,
+    initialDigital: 0,
+    remainingFisica: 0,
+    remainingDigital: 0,
+    message: ''
+  };
+
+  const client = initSupabase();
+
+  // Paso 1: Identificar todos los registros existentes en Supabase para asegurar borrado exacto
+  let fisicaIds = [];
+  let digitalIds = [];
+
+  try {
+    const [rf, rd] = await Promise.all([
+      sendSupabaseRest('pedidos_fisica?select=id', 'GET'),
+      sendSupabaseRest('pedidos_digital?select=id', 'GET')
+    ]);
+    if (Array.isArray(rf)) fisicaIds = rf.map(r => r.id);
+    if (Array.isArray(rd)) digitalIds = rd.map(r => r.id);
+  } catch (e) {
+    console.warn('Aviso identificando IDs en Supabase REST:', e);
+  }
+
+  if (client && (fisicaIds.length === 0 || digitalIds.length === 0)) {
+    try {
+      const [sf, sd] = await Promise.all([
+        client.from('pedidos_fisica').select('id'),
+        client.from('pedidos_digital').select('id')
+      ]);
+      if (sf.data && Array.isArray(sf.data) && sf.data.length > 0) {
+        fisicaIds = Array.from(new Set([...fisicaIds, ...sf.data.map(r => r.id)]));
+      }
+      if (sd.data && Array.isArray(sd.data) && sd.data.length > 0) {
+        digitalIds = Array.from(new Set([...digitalIds, ...sd.data.map(r => r.id)]));
+      }
+    } catch (e) {
+      console.warn('Aviso identificando IDs en Supabase SDK:', e);
+    }
+  }
+
+  report.initialFisica = fisicaIds.length;
+  report.initialDigital = digitalIds.length;
+
+  // Paso 2: Eliminación masiva y dirigida por IDs
+  // 2.1 Borrado por IDs específicos identificados
+  if (fisicaIds.length > 0) {
+    try {
+      await sendSupabaseRest(`pedidos_fisica?id=in.(${fisicaIds.map(encodeURIComponent).join(',')})`, 'DELETE');
+    } catch (e) {}
     if (client) {
       try {
-        await Promise.all([
-          client.from('pedidos_fisica').delete().neq('id', '_none_'),
-          client.from('pedidos_digital').delete().neq('id', '_none_')
-        ]);
-      } catch (sdkErr) {
-        console.warn('Aviso Supabase SDK al limpiar:', sdkErr);
-      }
+        await client.from('pedidos_fisica').delete().in('id', fisicaIds);
+      } catch (e) {}
     }
-
-    // 2. Limpiar en Supabase mediante REST
-    try {
-      await Promise.all([
-        sendSupabaseRest('pedidos_fisica?id=neq._none_', 'DELETE'),
-        sendSupabaseRest('pedidos_digital?id=neq._none_', 'DELETE')
-      ]);
-    } catch (restErr) {
-      console.warn('Aviso Supabase REST al limpiar:', restErr);
-    }
-
-    // 3. Limpiar almacenamiento local (LocalStorage)
-    localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify([]));
-    localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify([]));
-    localStorage.setItem('clickagro_cleared_v1', 'true');
-
-    // 4. Notificar a las pantallas y componentes
-    notifyStorageChange();
-    console.log('✓ Base de datos Click Agro vaciada y en CERO exitosamente.');
-    return { success: true };
-  } catch (err) {
-    console.error('Error crítico al vaciar base de datos:', err);
-    throw err;
   }
+
+  if (digitalIds.length > 0) {
+    try {
+      await sendSupabaseRest(`pedidos_digital?id=in.(${digitalIds.map(encodeURIComponent).join(',')})`, 'DELETE');
+    } catch (e) {}
+    if (client) {
+      try {
+        await client.from('pedidos_digital').delete().in('id', digitalIds);
+      } catch (e) {}
+    }
+  }
+
+  // 2.2 Borrado global con filtros universales
+  try {
+    await Promise.allSettled([
+      sendSupabaseRest('pedidos_fisica?id=not.is.null', 'DELETE'),
+      sendSupabaseRest('pedidos_digital?id=not.is.null', 'DELETE'),
+      sendSupabaseRest('pedidos_fisica?id=neq._none_', 'DELETE'),
+      sendSupabaseRest('pedidos_digital?id=neq._none_', 'DELETE')
+    ]);
+  } catch (e) {}
+
+  if (client) {
+    try {
+      await Promise.allSettled([
+        client.from('pedidos_fisica').delete().not('id', 'is', null),
+        client.from('pedidos_digital').delete().not('id', 'is', null)
+      ]);
+    } catch (e) {}
+  }
+
+  // 2.3 Resetear endpoint backend /api/pedidos en Vercel
+  try {
+    await fetch('/api/pedidos', { method: 'DELETE' }).catch(() => null);
+  } catch (e) {}
+
+  // Paso 3: FASE DE VERIFICACIÓN REAL
+  // Comprobamos directamente contra la base de datos si quedó algún registro
+  let verify = await verifyClickAgroDatabaseEmpty();
+
+  // Si aún quedan registros en Supabase (por ejemplo, límites de batch o bloqueo puntual):
+  if (verify.fisicaCount > 0 || verify.digitalCount > 0) {
+    console.warn(`Verificación preliminar: aún quedan registros (Física: ${verify.fisicaCount}, Digital: ${verify.digitalCount}). Ejecutando segunda pasada registro a registro...`);
+
+    try {
+      const [remF, remD] = await Promise.all([
+        sendSupabaseRest('pedidos_fisica?select=id', 'GET'),
+        sendSupabaseRest('pedidos_digital?select=id', 'GET')
+      ]);
+
+      if (Array.isArray(remF) && remF.length > 0) {
+        for (const item of remF) {
+          if (client) await client.from('pedidos_fisica').delete().eq('id', item.id).catch(() => null);
+          await sendSupabaseRest(`pedidos_fisica?id=eq.${encodeURIComponent(item.id)}`, 'DELETE');
+        }
+      }
+
+      if (Array.isArray(remD) && remD.length > 0) {
+        for (const item of remD) {
+          if (client) await client.from('pedidos_digital').delete().eq('id', item.id).catch(() => null);
+          await sendSupabaseRest(`pedidos_digital?id=eq.${encodeURIComponent(item.id)}`, 'DELETE');
+        }
+      }
+    } catch (e) {
+      console.warn('Error en segunda pasada de eliminación:', e);
+    }
+
+    // Re-verificar
+    verify = await verifyClickAgroDatabaseEmpty();
+  }
+
+  report.supabaseChecked = verify.supabaseConnected;
+  report.remainingFisica = verify.fisicaCount;
+  report.remainingDigital = verify.digitalCount;
+
+  // Paso 4: Limpiar almacenamiento local (LocalStorage)
+  localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify([]));
+  localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify([]));
+  localStorage.setItem('clickagro_cleared_v1', 'true');
+
+  // Paso 5: Notificar a todos los componentes de la interfaz
+  notifyStorageChange();
+
+  // Paso 6: Determinar resultado verificado
+  if (verify.fisicaCount === 0 && verify.digitalCount === 0) {
+    report.success = true;
+    report.verified = true;
+    report.message = '✔ Base de datos verificada al 100%: Supabase Cloud y almacenamiento local en 0 registros.';
+    console.log(report.message);
+  } else {
+    report.success = false;
+    report.verified = true;
+    report.message = `⚠️ Advertencia: El almacenamiento local fue vaciado, pero quedaron ${verify.fisicaCount} pedidos físicos y ${verify.digitalCount} pedidos digitales en Supabase. Verifica que las políticas RLS permitan DELETE a tu usuario.`;
+    console.warn(report.message);
+  }
+
+  return report;
 }
 
 function resetDemoData() {

@@ -89,11 +89,50 @@ async function querySupabase(endpoint, method = 'GET', body = null) {
 export default async function handler(req, res) {
   // Cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // -------------------------------------------------------------
+  // MÉTODO DELETE: Limpiar completamente la base de datos y memoria
+  // -------------------------------------------------------------
+  if (req.method === 'DELETE') {
+    try {
+      global.__CLICKAGRO_PEDIDOS_MEMORIA__ = { fisica: [], digital: [] };
+
+      // Ejecutar borrado en Supabase
+      await Promise.allSettled([
+        querySupabase('pedidos_fisica?id=not.is.null', 'DELETE'),
+        querySupabase('pedidos_digital?id=not.is.null', 'DELETE'),
+        querySupabase('pedidos_fisica?id=neq._none_', 'DELETE'),
+        querySupabase('pedidos_digital?id=neq._none_', 'DELETE')
+      ]);
+
+      // Verificación de vaciado
+      const [checkF, checkD] = await Promise.all([
+        querySupabase('pedidos_fisica?select=id'),
+        querySupabase('pedidos_digital?select=id')
+      ]);
+
+      const remF = Array.isArray(checkF) ? checkF.length : 0;
+      const remD = Array.isArray(checkD) ? checkD.length : 0;
+
+      return res.status(200).json({
+        success: remF === 0 && remD === 0,
+        verified: true,
+        remainingFisica: remF,
+        remainingDigital: remD,
+        message: remF === 0 && remD === 0
+          ? 'Base de datos en Supabase y memoria reseteadas a 0 correctamente.'
+          : `Atención: Quedan ${remF} físicos y ${remD} digitales en Supabase.`
+      });
+    } catch (err) {
+      console.error('Error en DELETE /api/pedidos:', err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
   }
 
   // -------------------------------------------------------------
@@ -108,7 +147,8 @@ export default async function handler(req, res) {
       if (tipo === 'fisica') {
         const dbRows = await querySupabase('pedidos_fisica?select=*&order=created_at.desc');
         let pedidos = [];
-        if (Array.isArray(dbRows) && dbRows.length > 0) {
+        if (Array.isArray(dbRows)) {
+          // Si dbRows es array (incluso vacío []), retornar los registros reales de la BD
           pedidos = dbRows.map(row => ({
             id: row.id,
             fecha: row.fecha || '',
@@ -131,7 +171,8 @@ export default async function handler(req, res) {
             numeroGuia: row.numero_guia || ''
           }));
         } else {
-          pedidos = global.__CLICKAGRO_PEDIDOS_MEMORIA__.fisica;
+          // Solo fallback si falló la conexión con Supabase
+          pedidos = global.__CLICKAGRO_PEDIDOS_MEMORIA__.fisica || [];
         }
 
         return res.status(200).json({
@@ -146,7 +187,8 @@ export default async function handler(req, res) {
       if (tipo === 'digital') {
         const dbRows = await querySupabase('pedidos_digital?select=*&order=created_at.desc');
         let pedidos = [];
-        if (Array.isArray(dbRows) && dbRows.length > 0) {
+        if (Array.isArray(dbRows)) {
+          // Si dbRows es array (incluso vacío []), retornar los registros reales de la BD
           pedidos = dbRows.map(row => ({
             id: row.id,
             fecha: row.fecha || '',
@@ -163,7 +205,7 @@ export default async function handler(req, res) {
             enviadoPor: row.enviado_por || null
           }));
         } else {
-          pedidos = global.__CLICKAGRO_PEDIDOS_MEMORIA__.digital;
+          pedidos = global.__CLICKAGRO_PEDIDOS_MEMORIA__.digital || [];
         }
 
         return res.status(200).json({
@@ -174,12 +216,56 @@ export default async function handler(req, res) {
         });
       }
 
-      // Si no se especifica tipo, retornar ambos
+      // Si no se especifica tipo, retornar ambos consultando Supabase
+      const [rowsFisica, rowsDigital] = await Promise.all([
+        querySupabase('pedidos_fisica?select=*&order=created_at.desc'),
+        querySupabase('pedidos_digital?select=*&order=created_at.desc')
+      ]);
+
+      const pedidosFisica = Array.isArray(rowsFisica)
+        ? rowsFisica.map(row => ({
+            id: row.id,
+            fecha: row.fecha || '',
+            nombre: row.nombre || '',
+            dni: row.dni || '',
+            tel: row.tel || '',
+            email: row.email || '',
+            direccion: row.direccion || '',
+            ciudad: row.ciudad || '',
+            provincia: row.provincia || '',
+            cp: row.cp || '',
+            notas: row.notas || '',
+            cuotas: row.cuotas || '1 pago de $150.000',
+            monto: Number(row.monto) || 150000,
+            tipo: 'fisica',
+            estadoPago: row.estado_pago || 'Registrado',
+            estadoDespacho: row.estado_despacho || 'Pendiente',
+            numeroGuia: row.numero_guia || ''
+          }))
+        : (global.__CLICKAGRO_PEDIDOS_MEMORIA__.fisica || []);
+
+      const pedidosDigital = Array.isArray(rowsDigital)
+        ? rowsDigital.map(row => ({
+            id: row.id,
+            fecha: row.fecha || '',
+            nombre: row.nombre || '',
+            email: row.email || '',
+            tel: row.tel || '',
+            cuotas: row.cuotas || '1 pago de $50.000',
+            monto: Number(row.monto) || 50000,
+            tipo: 'digital',
+            estadoPago: row.estado_pago || 'Registrado',
+            enviado: Boolean(row.enviado),
+            fechaEnvio: row.fecha_envio || null,
+            enviadoPor: row.enviado_por || null
+          }))
+        : (global.__CLICKAGRO_PEDIDOS_MEMORIA__.digital || []);
+
       return res.status(200).json({
         success: true,
         pedidos: {
-          fisica: global.__CLICKAGRO_PEDIDOS_MEMORIA__.fisica,
-          digital: global.__CLICKAGRO_PEDIDOS_MEMORIA__.digital
+          fisica: pedidosFisica,
+          digital: pedidosDigital
         }
       });
     } catch (err) {

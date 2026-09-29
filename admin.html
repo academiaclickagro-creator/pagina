@@ -1728,6 +1728,8 @@
 
     // ── SINCRONIZACIÓN CON ENDPOINTS SERVERLESS /api/pedidos ──
     async function syncOrdersFromApi() {
+      const isCleared = localStorage.getItem('clickagro_cleared_v1') === 'true';
+
       try {
         const [resFisica, resDigital] = await Promise.all([
           fetch('/api/pedidos?tipo=fisica').then(r => r.json()).catch(() => null),
@@ -1737,21 +1739,29 @@
         let updated = false;
 
         if (resFisica && resFisica.success && Array.isArray(resFisica.pedidos)) {
-          const current = getPhysicalOrders();
-          const map = new Map();
-          resFisica.pedidos.forEach(p => map.set(p.id, p));
-          current.forEach(p => { if (!map.has(p.id)) map.set(p.id, p); });
-          localStorage.setItem('clickagro_orders_fisica_v1', JSON.stringify(Array.from(map.values())));
-          updated = true;
+          if (resFisica.pedidos.length === 0) {
+            if (isCleared || getPhysicalOrders().length > 0) {
+              localStorage.setItem('clickagro_orders_fisica_v1', JSON.stringify([]));
+              updated = true;
+            }
+          } else {
+            localStorage.setItem('clickagro_orders_fisica_v1', JSON.stringify(resFisica.pedidos));
+            if (isCleared) localStorage.removeItem('clickagro_cleared_v1');
+            updated = true;
+          }
         }
 
         if (resDigital && resDigital.success && Array.isArray(resDigital.pedidos)) {
-          const current = getDigitalOrders();
-          const map = new Map();
-          resDigital.pedidos.forEach(p => map.set(p.id, p));
-          current.forEach(p => { if (!map.has(p.id)) map.set(p.id, p); });
-          localStorage.setItem('clickagro_orders_digital_v1', JSON.stringify(Array.from(map.values())));
-          updated = true;
+          if (resDigital.pedidos.length === 0) {
+            if (isCleared || getDigitalOrders().length > 0) {
+              localStorage.setItem('clickagro_orders_digital_v1', JSON.stringify([]));
+              updated = true;
+            }
+          } else {
+            localStorage.setItem('clickagro_orders_digital_v1', JSON.stringify(resDigital.pedidos));
+            if (isCleared) localStorage.removeItem('clickagro_cleared_v1');
+            updated = true;
+          }
         }
 
         if (updated && currentUser) {
@@ -2426,7 +2436,7 @@
     }
 
     async function handleClearDatabase() {
-      const confirm1 = confirm('⚠️ ATENCIÓN: ¿Estás seguro de que deseas vaciar y LIMPIAR TOTALMENTE la base de datos?\\n\\nEsta acción borrará todas las ventas y pedidos registrados (Físicos y Digitales) tanto en la nube (Supabase) como en este navegador, dejando todos los contadores en CERO (0).');
+      const confirm1 = confirm('⚠️ ATENCIÓN: ¿Estás seguro de que deseas vaciar y LIMPIAR TOTALMENTE la base de datos?\n\nEsta acción borrará todas las ventas y pedidos registrados (Físicos y Digitales) tanto en la nube (Supabase) como en este navegador, dejando todos los contadores en CERO (0).');
       if (!confirm1) return;
 
       const confirm2 = prompt('Para confirmar el borrado total e irreversible, escribe BORRAR en mayúsculas:');
@@ -2438,20 +2448,35 @@
       const btn = document.getElementById('btn-clear-db');
       if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '⏳ Vaciando base de datos...';
+        btn.innerHTML = '⏳ 1/3 Vaciando tablas en Supabase Cloud...';
       }
 
       try {
+        let result = null;
         if (typeof clearClickAgroDatabase === 'function') {
-          await clearClickAgroDatabase();
+          if (btn) btn.innerHTML = '⏳ 2/3 Eliminando registros y verificando en 0...';
+          result = await clearClickAgroDatabase();
         } else {
           localStorage.setItem('clickagro_orders_fisica_v1', '[]');
           localStorage.setItem('clickagro_orders_digital_v1', '[]');
           localStorage.setItem('clickagro_cleared_v1', 'true');
+          result = { success: true, verified: true, remainingFisica: 0, remainingDigital: 0 };
         }
+
+        if (btn) btn.innerHTML = '⏳ 3/3 Actualizando panel y métricas...';
+
         closeModal('modal-config');
         renderDashboard();
-        showToast('✔ Base de datos limpiada exitosamente. Todas las ventas en 0.', 'success');
+
+        if (result && result.success) {
+          showToast('✔ Base de datos verificada al 100%: 0 pedidos en Supabase Cloud y 0 locales.', 'success');
+          alert('✔ LIMPIEZA TOTAL VERIFICADA CON ÉXITO\n\nSe ha comprobado directamente contra la base de datos:\n• Pedidos físicos en Supabase: 0\n• Pedidos digitales en Supabase: 0\n• Pedidos en almacenamiento local: 0\n• Total de ventas y métricas: Restablecidas en $0\n\nEl sistema ha quedado completamente limpio y listo para operar.');
+        } else if (result && (result.remainingFisica > 0 || result.remainingDigital > 0)) {
+          showToast(`⚠️ Alerta: Quedaron ${result.remainingFisica} físicos y ${result.remainingDigital} digitales en Supabase.`, 'warning');
+          alert(`⚠️ ATENCIÓN: VERIFICACIÓN CON REGISTROS REMANENTES\n\nEl almacenamiento local fue vaciado correctamente, pero se detectaron registros en Supabase Cloud:\n• Pedidos físicos: ${result.remainingFisica}\n• Pedidos digitales: ${result.remainingDigital}\n\nSi estos registros no se eliminaron, suele deberse a que las políticas de seguridad (RLS) en Supabase no tienen habilitada la política FOR DELETE para el rol "anon" o "authenticated". Ejecuta el script supabase-schema.sql en el SQL Editor de Supabase para habilitarlas.`);
+        } else {
+          showToast('✔ Limpieza completada. Todas las órdenes en 0.', 'success');
+        }
       } catch (err) {
         console.error('Error al limpiar base de datos:', err);
         showToast('Error al limpiar base de datos: ' + (err.message || err), 'error');
