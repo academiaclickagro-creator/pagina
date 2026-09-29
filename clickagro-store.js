@@ -349,22 +349,13 @@ async function fetchOrdersFromSupabase() {
 
     if (Array.isArray(fisicaRes)) {
       const remoteFisica = fisicaRes.map(mapFisicaFromDb);
-      const localFisica = getPhysicalOrders();
-      // Fusionar manteniendo únicos por id
-      const mergedMap = new Map();
-      remoteFisica.forEach(o => mergedMap.set(o.id, o));
-      localFisica.forEach(o => { if (!mergedMap.has(o.id)) mergedMap.set(o.id, o); });
-      localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify(Array.from(mergedMap.values())));
+      localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify(remoteFisica));
       updated = true;
     }
 
     if (Array.isArray(digitalRes)) {
       const remoteDigital = digitalRes.map(mapDigitalFromDb);
-      const localDigital = getDigitalOrders();
-      const mergedMap = new Map();
-      remoteDigital.forEach(o => mergedMap.set(o.id, o));
-      localDigital.forEach(o => { if (!mergedMap.has(o.id)) mergedMap.set(o.id, o); });
-      localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify(Array.from(mergedMap.values())));
+      localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify(remoteDigital));
       updated = true;
     }
 
@@ -412,6 +403,9 @@ function getPhysicalOrders() {
   try {
     const raw = localStorage.getItem(CLICKAGRO_STORAGE_KEY_FISICA);
     if (!raw) {
+      if (localStorage.getItem('clickagro_cleared_v1') === 'true') {
+        return [];
+      }
       localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify(INITIAL_DEMO_FISICA));
       return [...INITIAL_DEMO_FISICA];
     }
@@ -468,6 +462,9 @@ function getDigitalOrders() {
   try {
     const raw = localStorage.getItem(CLICKAGRO_STORAGE_KEY_DIGITAL);
     if (!raw) {
+      if (localStorage.getItem('clickagro_cleared_v1') === 'true') {
+        return [];
+      }
       localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify(INITIAL_DEMO_DIGITAL));
       return [...INITIAL_DEMO_DIGITAL];
     }
@@ -590,7 +587,51 @@ function deleteOrder(type, id) {
   return false;
 }
 
+// Limpiar Base de Datos totalmente (poner en cero tanto física como digital en Supabase y local)
+async function clearClickAgroDatabase() {
+  try {
+    console.log('Iniciando limpieza total de base de datos Click Agro...');
+
+    // 1. Limpiar en Supabase con SDK
+    const client = initSupabase();
+    if (client) {
+      try {
+        await Promise.all([
+          client.from('pedidos_fisica').delete().neq('id', '_none_'),
+          client.from('pedidos_digital').delete().neq('id', '_none_')
+        ]);
+      } catch (sdkErr) {
+        console.warn('Aviso Supabase SDK al limpiar:', sdkErr);
+      }
+    }
+
+    // 2. Limpiar en Supabase mediante REST
+    try {
+      await Promise.all([
+        sendSupabaseRest('pedidos_fisica?id=neq._none_', 'DELETE'),
+        sendSupabaseRest('pedidos_digital?id=neq._none_', 'DELETE')
+      ]);
+    } catch (restErr) {
+      console.warn('Aviso Supabase REST al limpiar:', restErr);
+    }
+
+    // 3. Limpiar almacenamiento local (LocalStorage)
+    localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify([]));
+    localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify([]));
+    localStorage.setItem('clickagro_cleared_v1', 'true');
+
+    // 4. Notificar a las pantallas y componentes
+    notifyStorageChange();
+    console.log('✓ Base de datos Click Agro vaciada y en CERO exitosamente.');
+    return { success: true };
+  } catch (err) {
+    console.error('Error crítico al vaciar base de datos:', err);
+    throw err;
+  }
+}
+
 function resetDemoData() {
+  localStorage.removeItem('clickagro_cleared_v1');
   localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify(INITIAL_DEMO_FISICA));
   localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify(INITIAL_DEMO_DIGITAL));
   notifyStorageChange();
