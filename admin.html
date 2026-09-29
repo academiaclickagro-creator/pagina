@@ -12,10 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
 
-  <!-- Firebase Compat CDN (v10) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- Supabase JS Client v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Módulos de datos y envíos Click Agro -->
   <script src="clickagro-store.js"></script>
@@ -1643,11 +1641,23 @@
 
     // Inicialización al cargar la página
     document.addEventListener('DOMContentLoaded', () => {
-      if (typeof initFirebase === 'function') {
-        initFirebase();
+      if (typeof initSupabase === 'function') {
+        initSupabase();
       }
       initAuthObserver();
       setupStorageListener();
+
+      // Sincronizar con Supabase Cloud y activar Realtime
+      if (typeof fetchOrdersFromSupabase === 'function') {
+        fetchOrdersFromSupabase().then(() => {
+          if (currentUser) renderDashboard();
+        });
+      }
+      if (typeof subscribeToSupabaseRealtime === 'function') {
+        subscribeToSupabaseRealtime(() => {
+          if (currentUser) renderDashboard();
+        });
+      }
     });
 
     // Cambiar de pantalla principal
@@ -1667,16 +1677,17 @@
         showScreen('screen-login');
       }
 
-      // Intentar vincular observer de Firebase únicamente si la app está inicializada
-      if (window.firebase && firebase.apps && firebase.apps.length > 0 && typeof firebase.auth === 'function') {
+      // Observer de Supabase Auth si está inicializado
+      const client = typeof initSupabase === 'function' ? initSupabase() : null;
+      if (client && client.auth) {
         try {
-          firebase.auth().onAuthStateChanged((user) => {
-            if (user && user.email) {
-              validateAndGrantAccess(user.email);
+          client.auth.onAuthStateChange((event, session) => {
+            if (session && session.user && session.user.email) {
+              validateAndGrantAccess(session.user.email);
             }
           });
         } catch (e) {
-          console.warn('Firebase Auth en espera:', e);
+          console.warn('Supabase Auth listener en espera:', e);
         }
       }
     }
@@ -1723,21 +1734,24 @@
       return true;
     }
 
-    // Login mediante Google Sign-In (Firebase Popup)
+    // Login mediante Google Sign-In (Supabase / Acceso Directo)
     async function handleGoogleSignIn() {
-      if (window.firebase && firebase.apps && firebase.apps.length > 0 && typeof firebase.auth === 'function') {
+      const client = typeof initSupabase === 'function' ? initSupabase() : null;
+      if (client && client.auth) {
         try {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          const result = await firebase.auth().signInWithPopup(provider);
-          if (result && result.user && result.user.email) {
-            validateAndGrantAccess(result.user.email);
-          }
+          const { error } = await client.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: window.location.origin + window.location.pathname
+            }
+          });
+          if (error) throw error;
         } catch (err) {
-          console.error('Error en Google Sign-In:', err);
-          showToast(err.message || 'Error al conectar con Google', 'error');
+          console.warn('Google OAuth Supabase no configurado, usando acceso por cuenta autorizada:', err.message);
+          const selectedEmail = document.getElementById('quick-auth-email')?.value || AUTHORIZED_ADMIN_EMAILS[0];
+          validateAndGrantAccess(selectedEmail);
         }
       } else {
-        // Fallback directo si no está configurada la consola de Firebase
         const selectedEmail = document.getElementById('quick-auth-email')?.value || AUTHORIZED_ADMIN_EMAILS[0];
         validateAndGrantAccess(selectedEmail);
       }
@@ -1751,8 +1765,9 @@
 
     // Cerrar sesión
     function handleLogout() {
-      if (window.firebase && firebase.apps && firebase.apps.length > 0 && typeof firebase.auth === 'function' && firebase.auth().currentUser) {
-        firebase.auth().signOut().catch(() => {});
+      const client = typeof initSupabase === 'function' ? initSupabase() : null;
+      if (client && client.auth) {
+        client.auth.signOut().catch(() => {});
       }
       sessionStorage.removeItem('clickagro_admin_session_email');
       localStorage.removeItem('clickagro_admin_session_email');

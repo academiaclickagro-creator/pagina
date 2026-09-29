@@ -1,6 +1,6 @@
 /**
  * Click Agro - Gestor de Datos y Pedidos (Agenda Agro 2027)
- * Soporta Firebase Firestore + Almacenamiento Local (LocalStorage) con sincronización automática.
+ * Integración nativa con SUPABASE (PostgreSQL + Realtime) + Fallback LocalStorage.
  */
 
 const CLICKAGRO_STORAGE_KEY_FISICA = 'clickagro_orders_fisica_v1';
@@ -14,15 +14,17 @@ const AUTHORIZED_ADMIN_EMAILS = [
   'info@clickagro.org'
 ];
 
+// Credenciales Oficiales de Supabase Click Agro
+const SUPABASE_CONFIG = {
+  url: 'https://kigeuajghtzzzyfkljrs.supabase.co',
+  anonKey: 'sb_publishable_Re59yb6lwFXIIJFAFVHUkg_H2iAChlu'
+};
+
 // Configuración por defecto del sistema
 const DEFAULT_CONFIG = {
-  firebaseConfig: {
-    apiKey: "",
-    authDomain: "clickagro-admin.firebaseapp.com",
-    projectId: "clickagro-admin",
-    storageBucket: "clickagro-admin.appspot.com",
-    messagingSenderId: "",
-    appId: ""
+  supabaseConfig: {
+    url: SUPABASE_CONFIG.url,
+    anonKey: SUPABASE_CONFIG.anonKey
   },
   emailService: {
     provider: 'resend', // 'resend', 'emailjs', 'webhook', 'direct'
@@ -81,8 +83,8 @@ const INITIAL_DEMO_FISICA = [
     notas: 'Dejar en tranquera blanca con encargado Pedro.',
     cuotas: '1 pago de $150.000',
     monto: 150000,
-    estadoPago: 'Confirmado', // Pendiente, Registrado, Confirmado
-    estadoDespacho: 'En preparación', // Pendiente, En preparación, Despachado, Entregado
+    estadoPago: 'Confirmado',
+    estadoDespacho: 'En preparación',
     numeroGuia: 'AR-7260-9921',
     origen: 'web'
   },
@@ -104,25 +106,6 @@ const INITIAL_DEMO_FISICA = [
     estadoDespacho: 'Pendiente',
     numeroGuia: '',
     origen: 'web'
-  },
-  {
-    id: 'FIS-1727605900',
-    fecha: '2026-09-29 08:45',
-    nombre: 'Martín Zavaleta',
-    dni: '33.109.845',
-    tel: '+54 9 2293 481120',
-    email: 'martinzavaleta@gmail.com',
-    direccion: 'Calle Rodríguez 782',
-    ciudad: 'Tandil',
-    provincia: 'Buenos Aires',
-    cp: '7000',
-    notas: 'Timbre casa principal.',
-    cuotas: '1 pago de $150.000',
-    monto: 150000,
-    estadoPago: 'Pendiente',
-    estadoDespacho: 'Pendiente',
-    numeroGuia: '',
-    origen: 'web'
   }
 ];
 
@@ -135,7 +118,7 @@ const INITIAL_DEMO_DIGITAL = [
     tel: '+54 9 236 4658901',
     cuotas: '1 pago de $50.000',
     monto: 50000,
-    estadoPago: 'Confirmado', // Pendiente, Registrado, Confirmado
+    estadoPago: 'Confirmado',
     enviado: true,
     fechaEnvio: '2026-09-28 15:45',
     enviadoPor: 'academiaclickagro@gmail.com',
@@ -154,24 +137,273 @@ const INITIAL_DEMO_DIGITAL = [
     fechaEnvio: null,
     enviadoPor: null,
     origen: 'web'
-  },
-  {
-    id: 'DIG-1727606100',
-    fecha: '2026-09-29 09:12',
-    nombre: 'María Soledad Carrizo',
-    email: 'msolecarrizo@gmail.com',
-    tel: '+54 9 2346 612845',
-    cuotas: '1 pago de $50.000',
-    monto: 50000,
-    estadoPago: 'Registrado',
-    enviado: false,
-    fechaEnvio: null,
-    enviadoPor: null,
-    origen: 'web'
   }
 ];
 
-// Obtener Pedidos Físicos
+// ==========================================
+// MAPEOS BIDIRECCIONALES SUPABASE (Postgres <-> JS)
+// ==========================================
+function mapFisicaFromDb(row) {
+  return {
+    id: row.id,
+    fecha: row.fecha || '',
+    nombre: row.nombre || '',
+    dni: row.dni || '',
+    tel: row.tel || '',
+    email: row.email || '',
+    direccion: row.direccion || '',
+    ciudad: row.ciudad || '',
+    provincia: row.provincia || '',
+    cp: row.cp || '',
+    notas: row.notas || '',
+    cuotas: row.cuotas || '1 pago de $150.000',
+    monto: Number(row.monto) || 150000,
+    estadoPago: row.estado_pago || row.estadoPago || 'Registrado',
+    estadoDespacho: row.estado_despacho || row.estadoDespacho || 'Pendiente',
+    numeroGuia: row.numero_guia || row.numeroGuia || '',
+    origen: row.origen || 'web'
+  };
+}
+
+function mapFisicaToDb(order) {
+  return {
+    id: order.id,
+    fecha: order.fecha,
+    nombre: order.nombre,
+    dni: order.dni,
+    tel: order.tel,
+    email: order.email || null,
+    direccion: order.direccion,
+    ciudad: order.ciudad,
+    provincia: order.provincia,
+    cp: order.cp,
+    notas: order.notas || null,
+    cuotas: order.cuotas,
+    monto: Number(order.monto) || 150000,
+    estado_pago: order.estadoPago || 'Registrado',
+    estado_despacho: order.estadoDespacho || 'Pendiente',
+    numero_guia: order.numeroGuia || '',
+    origen: order.origen || 'web'
+  };
+}
+
+function mapDigitalFromDb(row) {
+  return {
+    id: row.id,
+    fecha: row.fecha || '',
+    nombre: row.nombre || '',
+    email: row.email || '',
+    tel: row.tel || '',
+    cuotas: row.cuotas || '1 pago de $50.000',
+    monto: Number(row.monto) || 50000,
+    estadoPago: row.estado_pago || row.estadoPago || 'Registrado',
+    enviado: Boolean(row.enviado),
+    fechaEnvio: row.fecha_envio || row.fechaEnvio || null,
+    enviadoPor: row.enviado_por || row.enviadoPor || null,
+    origen: row.origen || 'web'
+  };
+}
+
+function mapDigitalToDb(order) {
+  return {
+    id: order.id,
+    fecha: order.fecha,
+    nombre: order.nombre,
+    email: order.email,
+    tel: order.tel,
+    cuotas: order.cuotas,
+    monto: Number(order.monto) || 50000,
+    estado_pago: order.estadoPago || 'Registrado',
+    enviado: Boolean(order.enviado),
+    fecha_envio: order.fechaEnvio || null,
+    enviado_por: order.enviadoPor || null,
+    origen: order.origen || 'web'
+  };
+}
+
+// ==========================================
+// CLIENTE Y CONECTIVIDAD SUPABASE
+// ==========================================
+let supabaseClient = null;
+
+function initSupabase() {
+  if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
+    try {
+      if (!supabaseClient) {
+        supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+        console.log('✓ Supabase Client inicializado exitosamente.');
+      }
+      return supabaseClient;
+    } catch (e) {
+      console.warn('Error inicializando SDK de Supabase:', e);
+    }
+  }
+  return null;
+}
+
+// Envío REST directo a Supabase (funciona con o sin el script SDK cargado)
+async function sendSupabaseRest(endpoint, method, body = null) {
+  try {
+    const url = `${SUPABASE_CONFIG.url}/rest/v1/${endpoint}`;
+    const headers = {
+      'apikey': SUPABASE_CONFIG.anonKey,
+      'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'resolution=merge-duplicates,return=representation' : 'return=representation'
+    };
+    const options = {
+      method: method,
+      headers: headers
+    };
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn(`Supabase REST [${method} ${endpoint}] Status ${res.status}:`, errText);
+      return null;
+    }
+    return await res.json().catch(() => true);
+  } catch (err) {
+    console.warn(`Supabase REST Fetch error [${endpoint}]:`, err);
+    return null;
+  }
+}
+
+// Sincronizar Nuevo Pedido en Supabase
+async function syncOrderToSupabase(table, orderData) {
+  const payload = table === 'pedidos_fisica' ? mapFisicaToDb(orderData) : mapDigitalToDb(orderData);
+  
+  // Intento con SDK si está disponible
+  const client = initSupabase();
+  if (client) {
+    try {
+      const { data, error } = await client.from(table).upsert(payload, { onConflict: 'id' });
+      if (error) {
+        console.warn(`Error upsert Supabase SDK [${table}]:`, error);
+        // Fallback a REST
+        sendSupabaseRest(table, 'POST', payload);
+      } else {
+        console.log(`✓ Pedido sincronizado en Supabase [${table}]:`, payload.id);
+      }
+      return;
+    } catch (e) {
+      console.warn('Excepción en syncOrderToSupabase:', e);
+    }
+  }
+
+  // Fallback REST nativo
+  sendSupabaseRest(table, 'POST', payload);
+}
+
+// Actualizar Campos en Supabase
+async function updateSupabaseDocument(table, id, updates) {
+  const dbUpdates = {};
+  if (updates.estadoPago !== undefined) dbUpdates.estado_pago = updates.estadoPago;
+  if (updates.estadoDespacho !== undefined) dbUpdates.estado_despacho = updates.estadoDespacho;
+  if (updates.numeroGuia !== undefined) dbUpdates.numero_guia = updates.numeroGuia;
+  if (updates.enviado !== undefined) dbUpdates.enviado = updates.enviado;
+  if (updates.fechaEnvio !== undefined) dbUpdates.fecha_envio = updates.fechaEnvio;
+  if (updates.enviadoPor !== undefined) dbUpdates.enviado_por = updates.enviadoPor;
+
+  const client = initSupabase();
+  if (client) {
+    try {
+      const { error } = await client.from(table).update(dbUpdates).eq('id', id);
+      if (!error) return;
+    } catch (e) {}
+  }
+
+  // Fallback REST
+  sendSupabaseRest(`${table}?id=eq.${encodeURIComponent(id)}`, 'PATCH', dbUpdates);
+}
+
+// Eliminar Registro en Supabase
+async function deleteSupabaseDocument(table, id) {
+  const client = initSupabase();
+  if (client) {
+    try {
+      const { error } = await client.from(table).delete().eq('id', id);
+      if (!error) return;
+    } catch (e) {}
+  }
+
+  // Fallback REST
+  sendSupabaseRest(`${table}?id=eq.${encodeURIComponent(id)}`, 'DELETE');
+}
+
+// Descargar Órdenes remotas desde Supabase y actualizar LocalStorage
+async function fetchOrdersFromSupabase() {
+  try {
+    const [fisicaRes, digitalRes] = await Promise.all([
+      sendSupabaseRest('pedidos_fisica?select=*&order=created_at.desc', 'GET'),
+      sendSupabaseRest('pedidos_digital?select=*&order=created_at.desc', 'GET')
+    ]);
+
+    let updated = false;
+
+    if (Array.isArray(fisicaRes)) {
+      const remoteFisica = fisicaRes.map(mapFisicaFromDb);
+      const localFisica = getPhysicalOrders();
+      // Fusionar manteniendo únicos por id
+      const mergedMap = new Map();
+      remoteFisica.forEach(o => mergedMap.set(o.id, o));
+      localFisica.forEach(o => { if (!mergedMap.has(o.id)) mergedMap.set(o.id, o); });
+      localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify(Array.from(mergedMap.values())));
+      updated = true;
+    }
+
+    if (Array.isArray(digitalRes)) {
+      const remoteDigital = digitalRes.map(mapDigitalFromDb);
+      const localDigital = getDigitalOrders();
+      const mergedMap = new Map();
+      remoteDigital.forEach(o => mergedMap.set(o.id, o));
+      localDigital.forEach(o => { if (!mergedMap.has(o.id)) mergedMap.set(o.id, o); });
+      localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify(Array.from(mergedMap.values())));
+      updated = true;
+    }
+
+    if (updated) {
+      notifyStorageChange();
+      console.log('✓ Pedidos sincronizados con Supabase Cloud.');
+    }
+    return true;
+  } catch (err) {
+    console.warn('Error al obtener pedidos de Supabase:', err);
+    return false;
+  }
+}
+
+// Suscripción Realtime para actualizar el Panel en Vivo
+function subscribeToSupabaseRealtime(callback) {
+  const client = initSupabase();
+  if (!client || typeof client.channel !== 'function') return null;
+
+  try {
+    const channel = client.channel('clickagro-pedidos-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_fisica' }, (payload) => {
+        console.log('⚡ Cambio en tiempo real (Física):', payload);
+        fetchOrdersFromSupabase().then(() => { if (typeof callback === 'function') callback(); });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_digital' }, (payload) => {
+        console.log('⚡ Cambio en tiempo real (Digital):', payload);
+        fetchOrdersFromSupabase().then(() => { if (typeof callback === 'function') callback(); });
+      })
+      .subscribe((status) => {
+        console.log('Estado de conexión Realtime Supabase:', status);
+      });
+
+    return channel;
+  } catch (e) {
+    console.warn('Error suscribiendo a Realtime:', e);
+    return null;
+  }
+}
+
+// ==========================================
+// GESTIÓN LOCAL (LocalStorage + Sincronización)
+// ==========================================
 function getPhysicalOrders() {
   try {
     const raw = localStorage.getItem(CLICKAGRO_STORAGE_KEY_FISICA);
@@ -186,7 +418,6 @@ function getPhysicalOrders() {
   }
 }
 
-// Guardar Pedidos Físicos
 function savePhysicalOrders(orders) {
   try {
     localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify(orders));
@@ -198,7 +429,6 @@ function savePhysicalOrders(orders) {
   }
 }
 
-// Agregar Nuevo Pedido Físico (desde landing o admin)
 function addPhysicalOrder(data) {
   const orders = getPhysicalOrders();
   const newOrder = {
@@ -224,13 +454,12 @@ function addPhysicalOrder(data) {
   orders.unshift(newOrder);
   savePhysicalOrders(orders);
 
-  // Intentar sincronizar con Firebase si está configurado
-  syncOrderToFirebase('pedidos_fisica', newOrder);
+  // Sincronizar en la nube con Supabase
+  syncOrderToSupabase('pedidos_fisica', newOrder);
 
   return newOrder;
 }
 
-// Obtener Pedidos Digitales
 function getDigitalOrders() {
   try {
     const raw = localStorage.getItem(CLICKAGRO_STORAGE_KEY_DIGITAL);
@@ -245,7 +474,6 @@ function getDigitalOrders() {
   }
 }
 
-// Guardar Pedidos Digitales
 function saveDigitalOrders(orders) {
   try {
     localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify(orders));
@@ -257,7 +485,6 @@ function saveDigitalOrders(orders) {
   }
 }
 
-// Agregar Nuevo Pedido Digital (desde landing o admin)
 function addDigitalOrder(data) {
   const orders = getDigitalOrders();
   const newOrder = {
@@ -278,26 +505,24 @@ function addDigitalOrder(data) {
   orders.unshift(newOrder);
   saveDigitalOrders(orders);
 
-  // Intentar sincronizar con Firebase si está configurado
-  syncOrderToFirebase('pedidos_digital', newOrder);
+  // Sincronizar en la nube con Supabase
+  syncOrderToSupabase('pedidos_digital', newOrder);
 
   return newOrder;
 }
 
-// Actualizar Estado de Pago en Pedido Físico
 function updatePhysicalOrderStatus(id, newStatus) {
   const orders = getPhysicalOrders();
   const index = orders.findIndex(o => o.id === id);
   if (index !== -1) {
     orders[index].estadoPago = newStatus;
     savePhysicalOrders(orders);
-    updateFirebaseDocument('pedidos_fisica', id, { estadoPago: newStatus });
+    updateSupabaseDocument('pedidos_fisica', id, { estadoPago: newStatus });
     return true;
   }
   return false;
 }
 
-// Actualizar Despacho en Pedido Físico
 function updatePhysicalOrderDispatch(id, dispatchStatus, trackingNumber = '') {
   const orders = getPhysicalOrders();
   const index = orders.findIndex(o => o.id === id);
@@ -307,7 +532,7 @@ function updatePhysicalOrderDispatch(id, dispatchStatus, trackingNumber = '') {
       orders[index].numeroGuia = trackingNumber;
     }
     savePhysicalOrders(orders);
-    updateFirebaseDocument('pedidos_fisica', id, {
+    updateSupabaseDocument('pedidos_fisica', id, {
       estadoDespacho: dispatchStatus,
       numeroGuia: orders[index].numeroGuia
     });
@@ -316,20 +541,18 @@ function updatePhysicalOrderDispatch(id, dispatchStatus, trackingNumber = '') {
   return false;
 }
 
-// Actualizar Estado de Pago en Pedido Digital
 function updateDigitalOrderStatus(id, newStatus) {
   const orders = getDigitalOrders();
   const index = orders.findIndex(o => o.id === id);
   if (index !== -1) {
     orders[index].estadoPago = newStatus;
     saveDigitalOrders(orders);
-    updateFirebaseDocument('pedidos_digital', id, { estadoPago: newStatus });
+    updateSupabaseDocument('pedidos_digital', id, { estadoPago: newStatus });
     return true;
   }
   return false;
 }
 
-// Marcar Pedido Digital como Enviado (Acción del botón ENVIAR)
 function markDigitalOrderSent(id, adminEmail) {
   const orders = getDigitalOrders();
   const index = orders.findIndex(o => o.id === id);
@@ -338,7 +561,7 @@ function markDigitalOrderSent(id, adminEmail) {
     orders[index].fechaEnvio = formatCurrentDateTime();
     orders[index].enviadoPor = adminEmail || 'Admin Click Agro';
     saveDigitalOrders(orders);
-    updateFirebaseDocument('pedidos_digital', id, {
+    updateSupabaseDocument('pedidos_digital', id, {
       enviado: true,
       fechaEnvio: orders[index].fechaEnvio,
       enviadoPor: orders[index].enviadoPor
@@ -348,30 +571,27 @@ function markDigitalOrderSent(id, adminEmail) {
   return null;
 }
 
-// Eliminar Pedido
 function deleteOrder(type, id) {
   if (type === 'fisica') {
     const orders = getPhysicalOrders().filter(o => o.id !== id);
     savePhysicalOrders(orders);
-    deleteFirebaseDocument('pedidos_fisica', id);
+    deleteSupabaseDocument('pedidos_fisica', id);
     return true;
   } else if (type === 'digital') {
     const orders = getDigitalOrders().filter(o => o.id !== id);
     saveDigitalOrders(orders);
-    deleteFirebaseDocument('pedidos_digital', id);
+    deleteSupabaseDocument('pedidos_digital', id);
     return true;
   }
   return false;
 }
 
-// Restaurar Datos de Demostración
 function resetDemoData() {
   localStorage.setItem(CLICKAGRO_STORAGE_KEY_FISICA, JSON.stringify(INITIAL_DEMO_FISICA));
   localStorage.setItem(CLICKAGRO_STORAGE_KEY_DIGITAL, JSON.stringify(INITIAL_DEMO_DIGITAL));
   notifyStorageChange();
 }
 
-// Formateador de Fecha y Hora actual
 function formatCurrentDateTime() {
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
@@ -383,64 +603,8 @@ function formatCurrentDateTime() {
   return `${y}-${m}-${d} ${h}:${min}`;
 }
 
-// Notificar cambio a listeners locales
 function notifyStorageChange() {
   window.dispatchEvent(new CustomEvent('clickagro-orders-updated'));
-}
-
-// ==========================================
-// INTEGRACIÓN CON FIREBASE FIRESTORE (OPCIONAL)
-// ==========================================
-let firebaseDbInstance = null;
-
-function initFirebase() {
-  const config = getClickAgroConfig();
-  if (window.firebase && config.firebaseConfig && config.firebaseConfig.apiKey) {
-    try {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(config.firebaseConfig);
-      }
-      firebaseDbInstance = firebase.firestore();
-      console.log('Firebase Firestore inicializado exitosamente.');
-      return true;
-    } catch (e) {
-      console.warn('No se pudo inicializar Firebase con la configuración dada:', e);
-    }
-  }
-  return false;
-}
-
-function syncOrderToFirebase(collectionName, orderData) {
-  if (firebaseDbInstance) {
-    try {
-      firebaseDbInstance.collection(collectionName).doc(orderData.id).set(orderData, { merge: true })
-        .catch(err => console.warn('Error sincronizando con Firebase:', err));
-    } catch (e) {
-      console.warn('Excepción sincronizando con Firebase:', e);
-    }
-  }
-}
-
-function updateFirebaseDocument(collectionName, docId, updates) {
-  if (firebaseDbInstance) {
-    try {
-      firebaseDbInstance.collection(collectionName).doc(docId).update(updates)
-        .catch(err => console.warn('Error actualizando documento en Firebase:', err));
-    } catch (e) {
-      console.warn('Excepción actualizando documento en Firebase:', e);
-    }
-  }
-}
-
-function deleteFirebaseDocument(collectionName, docId) {
-  if (firebaseDbInstance) {
-    try {
-      firebaseDbInstance.collection(collectionName).doc(docId).delete()
-        .catch(err => console.warn('Error eliminando documento en Firebase:', err));
-    } catch (e) {
-      console.warn('Excepción eliminando documento en Firebase:', e);
-    }
-  }
 }
 
 // Exportar Pedidos a CSV
@@ -500,7 +664,6 @@ function exportOrdersToCSV(type) {
     });
   }
 
-  // Descargar archivo Blob CSV con BOM UTF-8
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
