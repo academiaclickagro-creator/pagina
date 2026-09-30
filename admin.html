@@ -170,99 +170,14 @@
       transform: translateY(-1px);
     }
 
+    .btn-google-login:active {
+      transform: translateY(0);
+    }
+
     .btn-google-login svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .auth-divider {
-      display: flex;
-      align-items: center;
-      margin: 24px 0;
-      color: var(--color-text-subtle);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .auth-divider::before, .auth-divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .auth-divider span {
-      padding: 0 12px;
-    }
-
-    .auth-allowed-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 24px;
-      text-align: left;
-    }
-
-    .auth-allowed-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--color-primary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .auth-allowed-list {
-      list-style: none;
-      font-size: 13px;
-      color: var(--color-text-muted);
-      display: grid;
-      gap: 5px;
-    }
-
-    .auth-allowed-list li {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .auth-allowed-list li::before {
-      content: "•";
-      color: var(--color-accent-green);
-      font-size: 16px;
-    }
-
-    .auth-quick-select {
-      margin-top: 14px;
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      font-size: 13px;
-      background: #ffffff;
-      color: var(--color-text-main);
-    }
-
-    .btn-quick-auth {
-      margin-top: 8px;
-      width: 100%;
-      background: var(--color-primary);
-      color: #ffffff;
-      border: none;
-      padding: 10px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .btn-quick-auth:hover {
-      background: var(--color-primary-light);
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
     }
 
     /* ── PANTALLA ACCESO DENEGADO ── */
@@ -1150,54 +1065,22 @@
         </div>
 
         <h2 class="auth-title">Acceso al Panel</h2>
-        <p class="auth-subtitle">Gestión de Ventas y Envíos · Agenda Agro 2027</p>
+        <p class="auth-subtitle">Gestión de Ventas y Envíos</p>
 
-        <!-- Botón de Inicio con Google -->
-        <button id="btn-login-google" class="btn-google-login" onclick="handleGoogleSignIn()">
-          <svg viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
-          Iniciar sesión con Google
-        </button>
-
-        <div class="auth-divider">
-          <span>Control de Acceso Seguro</span>
+        <!-- Botón único de Acceso -->
+        <div style="margin: 28px 0 10px 0;">
+          <button id="btn-login-google" class="btn-google-login" onclick="handleGoogleSignIn()">
+            <svg viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            INICIAR SESIÓN CON GOOGLE
+          </button>
         </div>
 
-        <!-- Cuentas autorizadas y Acceso de Verificación Rápida -->
-        <div class="auth-allowed-box">
-          <div class="auth-allowed-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-            Cuentas Autorizadas Únicamente
-          </div>
-          <ul class="auth-allowed-list">
-            <li>academiaclickagro@gmail.com</li>
-            <li>mariaelinapiriz@gmail.com</li>
-            <li>info@clickagro.org</li>
-          </ul>
-
-          <div style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 12px; text-align: left;">
-            <label style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Ingresar correo electrónico:</label>
-            <input type="email" id="custom-auth-email" placeholder="ejemplo@clickagro.com" class="auth-quick-select" style="margin-top: 0; margin-bottom: 6px;" />
-            <button class="btn-quick-auth" onclick="handleCustomEmailLogin()">
-              Verificar Credenciales
-            </button>
-            <div style="margin: 10px 0 6px 0; font-size: 11px; color: #94a3b8; text-align: center;">o acceso directo autorizado:</div>
-            <select id="quick-auth-email" class="auth-quick-select">
-              <option value="academiaclickagro@gmail.com">academiaclickagro@gmail.com (Principal)</option>
-              <option value="mariaelinapiriz@gmail.com">mariaelinapiriz@gmail.com</option>
-              <option value="info@clickagro.org">info@clickagro.org</option>
-            </select>
-            <button class="btn-quick-auth" style="background: #2d5a45; margin-top: 6px;" onclick="handleDirectAuthorizedLogin()">
-              Ingresar como Administrador
-            </button>
-          </div>
-        </div>
-
-        <div style="margin-top: 20px;">
+        <div style="margin-top: 24px;">
           <a href="index.html" style="font-size: 13px; color: #64748b; text-decoration: none;">← Volver al sitio principal</a>
         </div>
       </div>
@@ -1217,10 +1100,10 @@
           </svg>
         </div>
 
-        <h2 class="denied-title">Acceso Denegado</h2>
+        <h2 class="denied-title">ACCESO DENEGADO</h2>
         
         <p class="denied-desc">
-          La cuenta que intentó ingresar no figura en la lista de administradores autorizados para la gestión de Click Agro.
+          Esta cuenta de Google no tiene permisos para acceder al panel de administración.
         </p>
 
         <div id="denied-email-display" class="denied-account-pill">
@@ -1228,8 +1111,8 @@
         </div>
 
         <div class="denied-actions">
-          <button class="btn-denied-retry" onclick="showScreen('screen-login')">
-            Intentar con otra cuenta
+          <button class="btn-denied-retry" onclick="retryGoogleLogin()">
+            INICIAR SESIÓN CON GOOGLE
           </button>
           <a class="btn-denied-home" href="index.html">
             Volver a la página principal
@@ -1261,7 +1144,7 @@
         <div class="header-user-section">
           <div class="user-pill">
             <span class="user-pill-dot"></span>
-            <span id="admin-user-email">academiaclickagro@gmail.com</span>
+            <span id="admin-user-email">Sesión activa</span>
           </div>
 
           <a class="btn-header-action" href="agenda-agro-2027.html" target="_blank" title="Ver Landing de la Agenda">
@@ -1780,27 +1663,47 @@
     }
 
     // ── GESTIÓN DE AUTENTICACIÓN & RECHAZO DE ACCESO ──
-    function initAuthObserver() {
-      // Verificar si hay sesión guardada en localStorage o sessionStorage
+    const ALLOWED_ADMIN_ACCOUNTS = [
+      'academiaclickagro@gmail.com',
+      'mariaelinapiriz@gmail.com',
+      'info@clickagro.org'
+    ];
+
+    async function initAuthObserver() {
+      const client = typeof initSupabase === 'function' ? initSupabase() : null;
+
+      if (client && client.auth) {
+        try {
+          // 1. Obtener la sesión tras el retorno del flujo de Google OAuth
+          const { data: { session }, error } = await client.auth.getSession();
+          if (session && session.user && session.user.email) {
+            validateAndGrantAccess(session.user.email);
+            return;
+          }
+        } catch (e) {
+          console.warn('Error al verificar sesión activa de Supabase:', e);
+        }
+
+        // 2. Escuchar cambios de autenticación en tiempo real
+        try {
+          client.auth.onAuthStateChange((event, session) => {
+            if (session && session.user && session.user.email) {
+              validateAndGrantAccess(session.user.email);
+            } else if (event === 'SIGNED_OUT') {
+              showScreen('screen-login');
+            }
+          });
+        } catch (e) {
+          console.warn('Supabase Auth listener error:', e);
+        }
+      }
+
+      // 3. Verificar si ya existía una sesión guardada válida
       const savedUserEmail = localStorage.getItem('clickagro_admin_session_email') || sessionStorage.getItem('clickagro_admin_session_email');
       if (savedUserEmail) {
         validateAndGrantAccess(savedUserEmail);
       } else {
         showScreen('screen-login');
-      }
-
-      // Observer de Supabase Auth si está inicializado
-      const client = typeof initSupabase === 'function' ? initSupabase() : null;
-      if (client && client.auth) {
-        try {
-          client.auth.onAuthStateChange((event, session) => {
-            if (session && session.user && session.user.email) {
-              validateAndGrantAccess(session.user.email);
-            }
-          });
-        } catch (e) {
-          console.warn('Supabase Auth listener en espera:', e);
-        }
       }
     }
 
@@ -1808,21 +1711,29 @@
     function validateAndGrantAccess(email) {
       const normalizedEmail = (email || '').trim().toLowerCase();
 
-      // Chequeo estricto contra la lista blanca oficial
-      const isAuthorized = AUTHORIZED_ADMIN_EMAILS.some(e => e.toLowerCase() === normalizedEmail);
+      // Chequeo estricto contra la lista de cuentas autorizadas
+      const isAuthorized = ALLOWED_ADMIN_ACCOUNTS.some(e => e.toLowerCase() === normalizedEmail);
 
       if (!isAuthorized) {
         // RECHAZO INMEDIATO DE ACCESO
         console.warn('ACCESO DENEGADO para:', email);
+        const client = typeof initSupabase === 'function' ? initSupabase() : null;
+        if (client && client.auth) {
+          client.auth.signOut().catch(() => {});
+        }
         if (window.firebase && firebase.apps && firebase.apps.length > 0 && typeof firebase.auth === 'function' && firebase.auth().currentUser) {
           firebase.auth().signOut().catch(() => {});
         }
         sessionStorage.removeItem('clickagro_admin_session_email');
         localStorage.removeItem('clickagro_admin_session_email');
+        currentUser = null;
         
-        document.getElementById('denied-email-display').textContent = email || 'Cuenta no autenticada';
+        const deniedEmailDisplay = document.getElementById('denied-email-display');
+        if (deniedEmailDisplay) {
+          deniedEmailDisplay.textContent = email || 'Cuenta no autorizada';
+        }
         showScreen('screen-denied');
-        showToast('Acceso Denegado: Cuenta no autorizada', 'error');
+        showToast('ACCESO DENEGADO', 'error');
         return false;
       }
 
@@ -1830,7 +1741,9 @@
       currentUser = { email: normalizedEmail };
       sessionStorage.setItem('clickagro_admin_session_email', normalizedEmail);
       localStorage.setItem('clickagro_admin_session_email', normalizedEmail);
-      document.getElementById('admin-user-email').textContent = normalizedEmail;
+      
+      const adminEmailEl = document.getElementById('admin-user-email');
+      if (adminEmailEl) adminEmailEl.textContent = normalizedEmail;
 
       showScreen('screen-dashboard');
 
@@ -1846,51 +1759,62 @@
       return true;
     }
 
-    // Login mediante Google Sign-In (Supabase / Acceso Directo)
+    // Login mediante Google Sign-In
     async function handleGoogleSignIn() {
+      const btn = document.getElementById('btn-login-google');
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+      }
+
       const client = typeof initSupabase === 'function' ? initSupabase() : null;
       if (client && client.auth) {
         try {
           const { error } = await client.auth.signInWithOAuth({
             provider: 'google',
             options: {
-              redirectTo: window.location.origin + window.location.pathname
+              redirectTo: window.location.origin + window.location.pathname,
+              queryParams: {
+                prompt: 'select_account'
+              }
             }
           });
           if (error) throw error;
         } catch (err) {
-          console.warn('Google OAuth Supabase no configurado, usando acceso por cuenta autorizada:', err.message);
-          const selectedEmail = document.getElementById('quick-auth-email')?.value || AUTHORIZED_ADMIN_EMAILS[0];
-          validateAndGrantAccess(selectedEmail);
+          console.error('Error Google OAuth:', err);
+          showToast('Error al conectar con Google: ' + (err.message || 'Intente nuevamente'), 'error');
+          if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+          }
         }
       } else {
-        const selectedEmail = document.getElementById('quick-auth-email')?.value || AUTHORIZED_ADMIN_EMAILS[0];
-        validateAndGrantAccess(selectedEmail);
+        showToast('Servicio de autenticación no inicializado.', 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+        }
       }
     }
 
-    // Login directo con cuenta autorizada seleccionada
-    function handleDirectAuthorizedLogin() {
-      const selected = document.getElementById('quick-auth-email').value;
-      validateAndGrantAccess(selected);
-    }
-
-    // Login mediante verificación manual de correo
-    function handleCustomEmailLogin() {
-      const input = document.getElementById('custom-auth-email');
-      const email = input ? input.value.trim() : '';
-      if (!email) {
-        showToast('Por favor ingresá una dirección de correo.', 'error');
-        return;
+    // Reintentar acceso con otra cuenta tras denegación
+    async function retryGoogleLogin() {
+      const client = typeof initSupabase === 'function' ? initSupabase() : null;
+      if (client && client.auth) {
+        try { await client.auth.signOut(); } catch (e) {}
       }
-      validateAndGrantAccess(email);
+      sessionStorage.removeItem('clickagro_admin_session_email');
+      localStorage.removeItem('clickagro_admin_session_email');
+      currentUser = null;
+      showScreen('screen-login');
+      handleGoogleSignIn();
     }
 
     // Cerrar sesión
-    function handleLogout() {
+    async function handleLogout() {
       const client = typeof initSupabase === 'function' ? initSupabase() : null;
       if (client && client.auth) {
-        client.auth.signOut().catch(() => {});
+        try { await client.auth.signOut(); } catch (e) {}
       }
       sessionStorage.removeItem('clickagro_admin_session_email');
       localStorage.removeItem('clickagro_admin_session_email');
