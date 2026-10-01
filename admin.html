@@ -1582,8 +1582,10 @@
 
         <div class="metric-card">
           <div class="metric-data">
-            <h3>Pagos Confirmados</h3>
-            <div id="metric-pagos-confirmados" class="metric-number">0</div>
+            <h3>Dinero Ingresado</h3>
+            <div id="metric-dinero-ingresado" class="metric-number">$0</div>
+            <div id="metric-dinero-subtitulo" style="font-size: 11px; color: var(--color-text-muted); margin-top: 3px; font-weight: 600;">Física: $0 · Digital: $0</div>
+            <span id="metric-pagos-confirmados" style="display: none;">0</span>
           </div>
           <div class="metric-icon-box amber">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
@@ -2241,12 +2243,28 @@
       const digitalOrders = getDigitalOrders();
 
       const sentCount = digitalOrders.filter(o => o.enviado).length;
-      const confirmedCount = [...fisicaOrders, ...digitalOrders].filter(o => o.estadoPago === 'Confirmado').length;
+      const revenue = typeof calculateRevenueBreakdown === 'function'
+        ? calculateRevenueBreakdown()
+        : { totalIngresado: 0, totalFisica: 0, totalDigital: 0 };
 
       document.getElementById('metric-fisica-count').textContent = fisicaOrders.length;
       document.getElementById('metric-digital-count').textContent = digitalOrders.length;
       document.getElementById('metric-digital-sent').textContent = sentCount;
-      document.getElementById('metric-pagos-confirmados').textContent = confirmedCount;
+
+      const dineroEl = document.getElementById('metric-dinero-ingresado');
+      if (dineroEl) {
+        dineroEl.textContent = `$${revenue.totalIngresado.toLocaleString('es-AR')}`;
+      }
+
+      const subtituloEl = document.getElementById('metric-dinero-subtitulo');
+      if (subtituloEl) {
+        subtituloEl.textContent = `Física: $${revenue.totalFisica.toLocaleString('es-AR')} · Digital: $${revenue.totalDigital.toLocaleString('es-AR')}`;
+      }
+
+      const pagosConfirmadosEl = document.getElementById('metric-pagos-confirmados');
+      if (pagosConfirmadosEl) {
+        pagosConfirmadosEl.textContent = `$${revenue.totalIngresado.toLocaleString('es-AR')}`;
+      }
 
       document.getElementById('badge-tab-fisica').textContent = fisicaOrders.length;
       document.getElementById('badge-tab-digital').textContent = digitalOrders.length;

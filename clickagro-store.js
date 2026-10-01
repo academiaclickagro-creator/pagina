@@ -599,11 +599,84 @@ function parseCuotasInfo(order) {
     montoPorCuota = Math.round(montoTotal / cantidadCuotas);
   }
 
+  // Precios oficiales Click Agro:
+  // Agenda Digital: $50.000 en 1 pago o 2 pagos de $25.000
+  // Agenda Física: $150.000 en 1 pago o 3 pagos de $50.000
+  if (montoPorCuota === 0) {
+    const esFisica = order.tipo === 'fisica' || Boolean(order.direccion || order.cp || order.dni);
+    if (esFisica) {
+      montoPorCuota = cantidadCuotas > 1 ? 50000 : 150000;
+    } else {
+      montoPorCuota = cantidadCuotas > 1 ? 25000 : 50000;
+    }
+  }
+
   return {
     cantidadCuotas,
     montoPorCuota,
     textoOriginal: cuotasText,
-    montoTotal
+    montoTotal: montoTotal || (cantidadCuotas * montoPorCuota)
+  };
+}
+
+// Contabilidad de dinero ingresado (ventas de 1 pago + cuotas cobradas)
+function calculateRevenueBreakdown() {
+  const fisicaOrders = typeof getPhysicalOrders === 'function' ? getPhysicalOrders() : [];
+  const digitalOrders = typeof getDigitalOrders === 'function' ? getDigitalOrders() : [];
+
+  let totalFisica = 0;
+  let totalDigital = 0;
+  let cuotasFisicaCobradas = 0;
+  let cuotasDigitalCobradas = 0;
+
+  // 1. Agenda Física: $150.000 en 1 pago o 3 cuotas de $50.000
+  fisicaOrders.forEach(order => {
+    const info = parseCuotasInfo(order);
+    const pagadas = getOrderCuotasPagadas(order.id, order);
+    const totalCuotas = info.cantidadCuotas || 1;
+
+    if (totalCuotas <= 1) {
+      const isPaid = pagadas.length > 0 || order.estadoPago === 'Confirmado' || order.estado_pago === 'Confirmado';
+      if (isPaid) {
+        const monto = Number(order.monto) > 0 ? Number(order.monto) : 150000;
+        totalFisica += monto;
+        cuotasFisicaCobradas += 1;
+      }
+    } else {
+      const valorCuota = info.montoPorCuota > 0 ? info.montoPorCuota : 50000;
+      const cantPagadas = Math.min(pagadas.length, totalCuotas);
+      totalFisica += (cantPagadas * valorCuota);
+      cuotasFisicaCobradas += cantPagadas;
+    }
+  });
+
+  // 2. Agenda Digital: $50.000 en 1 pago o 2 cuotas de $25.000
+  digitalOrders.forEach(order => {
+    const info = parseCuotasInfo(order);
+    const pagadas = getOrderCuotasPagadas(order.id, order);
+    const totalCuotas = info.cantidadCuotas || 1;
+
+    if (totalCuotas <= 1) {
+      const isPaid = pagadas.length > 0 || order.estadoPago === 'Confirmado' || order.estado_pago === 'Confirmado';
+      if (isPaid) {
+        const monto = Number(order.monto) > 0 ? Number(order.monto) : 50000;
+        totalDigital += monto;
+        cuotasDigitalCobradas += 1;
+      }
+    } else {
+      const valorCuota = info.montoPorCuota > 0 ? info.montoPorCuota : 25000;
+      const cantPagadas = Math.min(pagadas.length, totalCuotas);
+      totalDigital += (cantPagadas * valorCuota);
+      cuotasDigitalCobradas += cantPagadas;
+    }
+  });
+
+  return {
+    totalFisica,
+    totalDigital,
+    totalIngresado: totalFisica + totalDigital,
+    cuotasFisicaCobradas,
+    cuotasDigitalCobradas
   };
 }
 
