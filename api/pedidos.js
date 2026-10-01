@@ -101,6 +101,34 @@ export default async function handler(req, res) {
   // -------------------------------------------------------------
   if (req.method === 'DELETE') {
     try {
+      const targetId = req.query.id || (req.body && req.body.id);
+      const tipo = (req.query.tipo || (req.body && req.body.tipo) || '').toLowerCase();
+
+      // Borrado de un pedido puntual
+      if (targetId) {
+        if (tipo === 'digital') {
+          global.__CLICKAGRO_PEDIDOS_MEMORIA__.digital = (global.__CLICKAGRO_PEDIDOS_MEMORIA__.digital || []).filter(o => o.id !== targetId);
+          await querySupabase(`pedidos_digital?id=eq.${encodeURIComponent(targetId)}`, 'DELETE');
+        } else if (tipo === 'fisica') {
+          global.__CLICKAGRO_PEDIDOS_MEMORIA__.fisica = (global.__CLICKAGRO_PEDIDOS_MEMORIA__.fisica || []).filter(o => o.id !== targetId);
+          await querySupabase(`pedidos_fisica?id=eq.${encodeURIComponent(targetId)}`, 'DELETE');
+        } else {
+          global.__CLICKAGRO_PEDIDOS_MEMORIA__.digital = (global.__CLICKAGRO_PEDIDOS_MEMORIA__.digital || []).filter(o => o.id !== targetId);
+          global.__CLICKAGRO_PEDIDOS_MEMORIA__.fisica = (global.__CLICKAGRO_PEDIDOS_MEMORIA__.fisica || []).filter(o => o.id !== targetId);
+          await Promise.allSettled([
+            querySupabase(`pedidos_digital?id=eq.${encodeURIComponent(targetId)}`, 'DELETE'),
+            querySupabase(`pedidos_fisica?id=eq.${encodeURIComponent(targetId)}`, 'DELETE')
+          ]);
+        }
+
+        return res.status(200).json({
+          success: true,
+          id: targetId,
+          tipo: tipo || 'ambos',
+          message: `Pedido ${targetId} eliminado correctamente.`
+        });
+      }
+
       global.__CLICKAGRO_PEDIDOS_MEMORIA__ = { fisica: [], digital: [] };
 
       // Ejecutar borrado en Supabase

@@ -577,11 +577,17 @@ function deleteOrder(type, id) {
     const orders = getPhysicalOrders().filter(o => o.id !== id);
     savePhysicalOrders(orders);
     deleteSupabaseDocument('pedidos_fisica', id);
+    try {
+      fetch(`/api/pedidos?tipo=fisica&id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
+    } catch (e) {}
     return true;
   } else if (type === 'digital') {
     const orders = getDigitalOrders().filter(o => o.id !== id);
     saveDigitalOrders(orders);
     deleteSupabaseDocument('pedidos_digital', id);
+    try {
+      fetch(`/api/pedidos?tipo=digital&id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
+    } catch (e) {}
     return true;
   }
   return false;
