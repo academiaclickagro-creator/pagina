@@ -9,9 +9,9 @@ const CLICKAGRO_CONFIG_KEY = 'clickagro_admin_config_v1';
 
 // Cuentas de Administrador Autorizadas
 const AUTHORIZED_ADMIN_EMAILS = [
+  'abancar2.0@gmail.com',
   'academiaclickagro@gmail.com',
-  'mariaelinapiriz@gmail.com',
-  'info@clickagro.org'
+  'mariaelinapiriz@gmail.com'
 ];
 
 // Credenciales Oficiales de Supabase Click Agro
