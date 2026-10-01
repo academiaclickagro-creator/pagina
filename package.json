@@ -6,7 +6,9 @@
   "description": "Sistema de ventas, gestión de pedidos y panel de administración para Agenda Agro 2027 · Click Agro",
   "scripts": {
     "dev": "vercel dev",
-    "start": "npx serve ."
+    "start": "npx serve .",
+    "verify": "node scripts/verify-functionality.mjs",
+    "audit": "node scripts/audit-optimization.mjs"
   },
   "dependencies": {}
 }
