@@ -572,6 +572,108 @@ function markDigitalOrderSent(id, adminEmail) {
   return null;
 }
 
+// ==========================================
+// GESTIÓN DE CUOTAS Y PAGOS
+// ==========================================
+function parseCuotasInfo(order) {
+  if (!order) return { cantidadCuotas: 1, montoPorCuota: 0, textoOriginal: '1 pago', montoTotal: 0 };
+  const cuotasText = (order.cuotas || '1 pago').trim();
+  const montoTotal = Number(order.monto) || 0;
+
+  let cantidadCuotas = 1;
+  const match = cuotasText.match(/(\d+)\s*(cuotas?|pagos?)/i);
+  if (match) {
+    cantidadCuotas = parseInt(match[1], 10) || 1;
+  } else {
+    const matchSimple = cuotasText.match(/^(\d+)\s*x/i);
+    if (matchSimple) {
+      cantidadCuotas = parseInt(matchSimple[1], 10) || 1;
+    }
+  }
+
+  let montoPorCuota = 0;
+  const matchMonto = cuotasText.match(/\$\s*([\d\.]+)/);
+  if (matchMonto) {
+    montoPorCuota = parseFloat(matchMonto[1].replace(/\./g, '')) || 0;
+  } else if (montoTotal > 0 && cantidadCuotas > 0) {
+    montoPorCuota = Math.round(montoTotal / cantidadCuotas);
+  }
+
+  return {
+    cantidadCuotas,
+    montoPorCuota,
+    textoOriginal: cuotasText,
+    montoTotal
+  };
+}
+
+function getOrderCuotasPagadas(orderId, order = null) {
+  try {
+    const raw = localStorage.getItem(`clickagro_cuotas_${orderId}`);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+
+  if (order && Array.isArray(order.cuotasPagadas)) {
+    return order.cuotasPagadas;
+  }
+
+  // Si el pedido ya tiene estado confirmado desde antes y no tenía cuotas explícitas, asumir todas pagadas
+  if (order && (order.estadoPago === 'Confirmado' || order.estado_pago === 'Confirmado')) {
+    const info = parseCuotasInfo(order);
+    const todas = [];
+    for (let i = 1; i <= info.cantidadCuotas; i++) todas.push(i);
+    return todas;
+  }
+
+  return [];
+}
+
+function setOrderCuotasPagadas(type, orderId, cuotasPagadas) {
+  try {
+    localStorage.setItem(`clickagro_cuotas_${orderId}`, JSON.stringify(cuotasPagadas));
+  } catch (e) {}
+
+  let updatedOrder = null;
+
+  if (type === 'fisica') {
+    const orders = getPhysicalOrders();
+    const idx = orders.findIndex(o => o.id === orderId);
+    if (idx !== -1) {
+      orders[idx].cuotasPagadas = cuotasPagadas;
+      const info = parseCuotasInfo(orders[idx]);
+      if (cuotasPagadas.length >= info.cantidadCuotas) {
+        orders[idx].estadoPago = 'Confirmado';
+      } else if (cuotasPagadas.length > 0) {
+        orders[idx].estadoPago = 'Pago Parcial';
+      } else {
+        orders[idx].estadoPago = 'Pendiente';
+      }
+      savePhysicalOrders(orders);
+      updatePhysicalOrderStatus(orderId, orders[idx].estadoPago);
+      updatedOrder = orders[idx];
+    }
+  } else if (type === 'digital') {
+    const orders = getDigitalOrders();
+    const idx = orders.findIndex(o => o.id === orderId);
+    if (idx !== -1) {
+      orders[idx].cuotasPagadas = cuotasPagadas;
+      const info = parseCuotasInfo(orders[idx]);
+      if (cuotasPagadas.length >= info.cantidadCuotas) {
+        orders[idx].estadoPago = 'Confirmado';
+      } else if (cuotasPagadas.length > 0) {
+        orders[idx].estadoPago = 'Pago Parcial';
+      } else {
+        orders[idx].estadoPago = 'Pendiente';
+      }
+      saveDigitalOrders(orders);
+      updateDigitalOrderStatus(orderId, orders[idx].estadoPago);
+      updatedOrder = orders[idx];
+    }
+  }
+
+  return updatedOrder;
+}
+
 function deleteOrder(type, id) {
   if (type === 'fisica') {
     const orders = getPhysicalOrders().filter(o => o.id !== id);

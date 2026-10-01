@@ -981,6 +981,217 @@
       transform: scale(1.12);
     }
 
+    /* ── GESTIÓN DE CUOTAS Y COBROS ── */
+    .cuotas-cell-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 175px;
+      position: relative;
+    }
+
+    .cuotas-plan-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1e3d2f;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      line-height: 1.2;
+    }
+
+    .cuota-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      width: fit-content;
+      line-height: 1.3;
+    }
+
+    .cuota-pill.complete {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+
+    .cuota-pill.partial {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fcd34d;
+    }
+
+    .cuota-pill.pending {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #cbd5e1;
+    }
+
+    .cuotas-dropdown {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .btn-cuotas-summary {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 5px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      transition: all 0.15s ease;
+      user-select: none;
+      list-style: none;
+    }
+
+    .btn-cuotas-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .btn-cuotas-summary:hover {
+      background: #f8fafc;
+      border-color: var(--color-accent-green);
+    }
+
+    .cuotas-dropdown[open] .btn-cuotas-summary {
+      border-color: var(--color-accent-green);
+      background: #f0fdf4;
+      color: #166534;
+    }
+
+    .cuotas-dropdown[open] .chevron-cuota {
+      transform: rotate(180deg);
+    }
+
+    .chevron-cuota {
+      transition: transform 0.2s ease;
+      color: #64748b;
+      flex-shrink: 0;
+    }
+
+    .cuotas-popover {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 100;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      min-width: 260px;
+      padding: 10px;
+      animation: modalIn 0.15s ease-out;
+    }
+
+    .cuotas-popover-header {
+      padding-bottom: 7px;
+      margin-bottom: 7px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .cuotas-popover-header h5 {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--color-primary);
+      margin-bottom: 2px;
+    }
+
+    .cuotas-popover-header span {
+      font-size: 11px;
+      color: var(--color-text-muted);
+    }
+
+    .cuotas-checkbox-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .cuota-check-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 7px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .cuota-check-label:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .cuota-check-label.is-paid {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .cuota-check-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cuota-check-left input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+      accent-color: var(--color-accent-green);
+    }
+
+    .cuota-check-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .cuota-num-title {
+      font-weight: 700;
+      color: var(--color-text-main);
+      font-size: 12px;
+    }
+
+    .cuota-amount-sub {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .cuota-tag-status {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cuota-tag-status.paid {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .cuota-tag-status.pending {
+      background: #e2e8f0;
+      color: #475569;
+    }
+
     /* Spinner */
     .spinner {
       width: 14px;
@@ -1447,6 +1658,7 @@
                 <th>Localidad</th>
                 <th>Provincia</th>
                 <th>Código Postal</th>
+                <th>Plan / Cuotas</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -1474,7 +1686,8 @@
                 <th>Fecha / ID</th>
                 <th>Nombre</th>
                 <th>Email</th>
-                <th>Estado</th>
+                <th>Plan / Cuotas</th>
+                <th>Envío</th>
                 <th>Acción</th>
               </tr>
             </thead>
@@ -2094,6 +2307,9 @@
             <td>
               <span style="font-family: monospace; font-weight: 700; color: #1e3d2f;">${escapeHtml(order.cp || '-')}</span>
             </td>
+            <td id="cuotas-cell-${order.id}">
+              ${renderCuotasCellHtml('fisica', order)}
+            </td>
             <td>
               <div style="display: flex; gap: 4px; align-items: center;">
                 <button class="btn-tab-action" style="padding: 3px 8px; font-size: 11px;" onclick="copyToClipboard('${escapeJsString(addressBlock)}', 'Dirección copiada!')" title="Copiar dirección completa">
@@ -2153,6 +2369,9 @@
                 </button>
               </div>
             </td>
+            <td id="cuotas-cell-${order.id}">
+              ${renderCuotasCellHtml('digital', order)}
+            </td>
             <td id="status-cell-${order.id}">
               ${order.enviado ? `
                 <span class="status-badge confirmado" style="font-size: 11px;">
@@ -2186,6 +2405,104 @@
           </tr>
         `;
       }).join('');
+    }
+
+    // ── RENDERIZADO Y CONTROL INTERACTIVO DE CUOTAS ──
+    function renderCuotasCellHtml(type, order) {
+      const info = typeof parseCuotasInfo === 'function' ? parseCuotasInfo(order) : { cantidadCuotas: 1, montoPorCuota: 0, textoOriginal: order.cuotas || '1 pago' };
+      const pagadas = typeof getOrderCuotasPagadas === 'function' ? getOrderCuotasPagadas(order.id, order) : (order.cuotasPagadas || []);
+      const total = info.cantidadCuotas || 1;
+      const count = pagadas.length;
+      const isComplete = count >= total;
+      const isPartial = count > 0 && !isComplete;
+
+      let pillClass = 'pending';
+      let pillText = `○ ${count}/${total} cuotas cobradas`;
+      if (isComplete) {
+        pillClass = 'complete';
+        pillText = `✔ ${total === 1 ? 'Pago acreditado' : `${total}/${total} cuotas cobradas`}`;
+      } else if (isPartial) {
+        pillClass = 'partial';
+        pillText = `⏳ ${count}/${total} cuotas cobradas`;
+      }
+
+      const itemsHtml = [];
+      for (let i = 1; i <= total; i++) {
+        const isPaid = pagadas.includes(i);
+        const cuotaTitle = total === 1 ? 'Pago único' : `Cuota ${i} de ${total}`;
+        const montoText = info.montoPorCuota > 0 ? `$${info.montoPorCuota.toLocaleString('es-AR')}` : '';
+
+        itemsHtml.push(`
+          <label class="cuota-check-label ${isPaid ? 'is-paid' : ''}">
+            <div class="cuota-check-left">
+              <input type="checkbox" ${isPaid ? 'checked' : ''} onchange="handleCuotaToggle('${type}', '${order.id}', ${i}, this.checked)">
+              <div class="cuota-check-info">
+                <span class="cuota-num-title">${cuotaTitle}</span>
+                ${montoText ? `<span class="cuota-amount-sub">${montoText}</span>` : ''}
+              </div>
+            </div>
+            <span class="cuota-tag-status ${isPaid ? 'paid' : 'pending'}">${isPaid ? 'Cobrada' : 'Pendiente'}</span>
+          </label>
+        `);
+      }
+
+      return `
+        <div class="cuotas-cell-wrapper">
+          <div class="cuotas-plan-badge" title="${escapeHtml(info.textoOriginal)}">
+            💳 <span>${escapeHtml(info.textoOriginal)}</span>
+          </div>
+          <div class="cuota-pill ${pillClass}">
+            ${pillText}
+          </div>
+          <details class="cuotas-dropdown" id="dropdown-cuotas-${order.id}">
+            <summary class="btn-cuotas-summary">
+              <span>Registrar cuotas (${count}/${total})</span>
+              <svg class="chevron-cuota" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </summary>
+            <div class="cuotas-popover">
+              <div class="cuotas-popover-header">
+                <h5>Control de Pagos</h5>
+                <span>${escapeHtml(info.textoOriginal)}</span>
+              </div>
+              <div class="cuotas-checkbox-list">
+                ${itemsHtml.join('')}
+              </div>
+            </div>
+          </details>
+        </div>
+      `;
+    }
+
+    function handleCuotaToggle(type, orderId, cuotaNum, isChecked) {
+      let pagadas = typeof getOrderCuotasPagadas === 'function' ? getOrderCuotasPagadas(orderId) : [];
+      if (isChecked) {
+        if (!pagadas.includes(cuotaNum)) pagadas.push(cuotaNum);
+      } else {
+        pagadas = pagadas.filter(n => n !== cuotaNum);
+      }
+
+      // Guardar persistencia
+      let updatedOrder = null;
+      if (typeof setOrderCuotasPagadas === 'function') {
+        updatedOrder = setOrderCuotasPagadas(type, orderId, pagadas);
+      }
+
+      // Actualizar vista de celda manteniendo abierto el menú desplegable
+      const cell = document.getElementById(`cuotas-cell-${orderId}`);
+      if (cell && updatedOrder) {
+        cell.innerHTML = renderCuotasCellHtml(type, updatedOrder);
+        const drop = document.getElementById(`dropdown-cuotas-${orderId}`);
+        if (drop) drop.open = true;
+      }
+
+      // Actualizar contadores y métricas generales del dashboard
+      renderMetrics();
+
+      if (isChecked) {
+        showToast(`✔ Cuota ${cuotaNum} registrada como Cobrada`, 'success');
+      } else {
+        showToast(`ℹ Cuota ${cuotaNum} marcada como Pendiente`, 'info');
+      }
     }
 
     // Filtrar pedidos por buscador y estado de pago
