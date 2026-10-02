@@ -1750,11 +1750,16 @@
                 <option value="Confirmado">Confirmado (Comprobante OK)</option>
                 <option value="Registrado">Registrado</option>
                 <option value="Pendiente">Pendiente</option>
+                <option value="Pago Parcial">Pago Parcial (1ª Cuota Cobrada)</option>
               </select>
             </div>
             <div class="form-group">
               <label>Modalidad de Pago</label>
-              <input type="text" id="man-cuotas" value="1 pago por transferencia" />
+              <input type="text" id="man-cuotas" list="list-cuotas-sugeridas" placeholder="1 pago de $50.000 o 2 cuotas de $25.000" />
+              <datalist id="list-cuotas-sugeridas">
+                <option value="1 pago de $50.000"></option>
+                <option value="2 cuotas de $25.000"></option>
+              </datalist>
             </div>
           </div>
 
@@ -2467,7 +2472,7 @@
       return `
         <div class="cuotas-cell-wrapper">
           <div class="cuotas-plan-badge" title="${escapeHtml(info.textoOriginal)}">
-            💳 <span>${escapeHtml(info.textoOriginal)}</span>
+            💳 <span>${escapeHtml(info.textoFormateado || info.textoOriginal)}</span>
           </div>
           <div class="cuota-pill ${pillClass}">
             ${pillText}
@@ -2480,7 +2485,7 @@
             <div class="cuotas-popover">
               <div class="cuotas-popover-header">
                 <h5>Control de Pagos</h5>
-                <span>${escapeHtml(info.textoOriginal)}</span>
+                <span>${escapeHtml(info.textoFormateado || info.textoOriginal)}</span>
               </div>
               <div class="cuotas-checkbox-list">
                 ${itemsHtml.join('')}
@@ -2492,7 +2497,9 @@
     }
 
     function handleCuotaToggle(type, orderId, cuotaNum, isChecked) {
-      let pagadas = typeof getOrderCuotasPagadas === 'function' ? getOrderCuotasPagadas(orderId) : [];
+      const ordersList = type === 'fisica' ? (typeof getPhysicalOrders === 'function' ? getPhysicalOrders() : []) : (typeof getDigitalOrders === 'function' ? getDigitalOrders() : []);
+      const currentOrder = ordersList.find(o => o.id === orderId) || null;
+      let pagadas = typeof getOrderCuotasPagadas === 'function' ? [...getOrderCuotasPagadas(orderId, currentOrder)] : [];
       if (isChecked) {
         if (!pagadas.includes(cuotaNum)) pagadas.push(cuotaNum);
       } else {
@@ -2787,10 +2794,32 @@
     function toggleManualOrderFields() {
       const tipo = document.getElementById('man-tipo').value;
       const fisicaFields = document.getElementById('man-fields-fisica');
+      const cuotasInput = document.getElementById('man-cuotas');
+      const datalist = document.getElementById('list-cuotas-sugeridas');
+
       if (tipo === 'fisica') {
         fisicaFields.style.display = 'block';
+        if (datalist) {
+          datalist.innerHTML = `
+            <option value="1 pago de $150.000"></option>
+            <option value="3 cuotas de $50.000"></option>
+            <option value="2 cuotas de $75.000"></option>
+          `;
+        }
+        if (cuotasInput && (!cuotasInput.value || cuotasInput.value.includes('$50.000') || cuotasInput.value.includes('$25.000') || cuotasInput.value.includes('por transferencia'))) {
+          cuotasInput.value = '1 pago de $150.000';
+        }
       } else {
         fisicaFields.style.display = 'none';
+        if (datalist) {
+          datalist.innerHTML = `
+            <option value="1 pago de $50.000"></option>
+            <option value="2 cuotas de $25.000"></option>
+          `;
+        }
+        if (cuotasInput && (!cuotasInput.value || cuotasInput.value.includes('$150.000') || cuotasInput.value.includes('por transferencia'))) {
+          cuotasInput.value = '1 pago de $50.000';
+        }
       }
     }
 
@@ -2804,12 +2833,14 @@
       const cuotas = document.getElementById('man-cuotas').value.trim();
 
       if (tipo === 'fisica') {
+        const info = typeof parseCuotasInfo === 'function' ? parseCuotasInfo({ cuotas, tipo: 'fisica', monto: 150000 }) : null;
+        const cuotasFinal = (info && info.textoFormateado) ? info.textoFormateado : (cuotas || '1 pago de $150.000');
         addPhysicalOrder({
           nombre,
           tel,
           email,
           estadoPago,
-          cuotas: cuotas || '1 pago de $150.000',
+          cuotas: cuotasFinal,
           dni: document.getElementById('man-dni').value.trim(),
           direccion: document.getElementById('man-direccion').value.trim(),
           ciudad: document.getElementById('man-ciudad').value.trim(),
@@ -2819,12 +2850,14 @@
           origen: 'manual_admin'
         });
       } else {
+        const info = typeof parseCuotasInfo === 'function' ? parseCuotasInfo({ cuotas, tipo: 'digital', monto: 50000 }) : null;
+        const cuotasFinal = (info && info.textoFormateado) ? info.textoFormateado : (cuotas || '1 pago de $50.000');
         addDigitalOrder({
           nombre,
           tel,
           email,
           estadoPago,
-          cuotas: cuotas || '1 pago de $50.000',
+          cuotas: cuotasFinal,
           origen: 'manual_admin'
         });
       }

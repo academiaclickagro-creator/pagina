@@ -576,21 +576,71 @@ function markDigitalOrderSent(id, adminEmail) {
 // GESTIÓN DE CUOTAS Y PAGOS
 // ==========================================
 function parseCuotasInfo(order) {
-  if (!order) return { cantidadCuotas: 1, montoPorCuota: 0, textoOriginal: '1 pago', montoTotal: 0 };
+  if (!order) return { cantidadCuotas: 1, montoPorCuota: 0, textoOriginal: '1 pago', montoTotal: 0, textoFormateado: '1 pago' };
   const cuotasText = (order.cuotas || '1 pago').trim();
   const montoTotal = Number(order.monto) || 0;
+  const esFisica = order.tipo === 'fisica' || Boolean(order.direccion || order.cp || order.dni || (order.id || '').startsWith('FIS'));
 
   let cantidadCuotas = 1;
-  const match = cuotasText.match(/(\d+)\s*(cuotas?|pagos?)/i);
-  if (match) {
-    cantidadCuotas = parseInt(match[1], 10) || 1;
-  } else {
+  let cuotaActual = null;
+
+  // 1. Patrones de fracción (ej: 'cuota 1/2', '1/2', 'cuota 1 / 2', 'c. 1/2', 'cuota 2/2')
+  const matchFraccion = cuotasText.match(/(?:cuota|pago|c\.?)?\s*(\d+)\s*[/]\s*(\d+)/i);
+  if (matchFraccion) {
+    cuotaActual = parseInt(matchFraccion[1], 10);
+    cantidadCuotas = parseInt(matchFraccion[2], 10) || 1;
+  }
+
+  // 2. Patrones con conectores 'de' (ej: 'cuota 1 de 2', '1 de 2', 'cuota 2 de 2')
+  if (cantidadCuotas === 1) {
+    const matchDe = cuotasText.match(/(?:cuota|pago)?\s*(\d+)\s*de\s*(\d+)/i);
+    if (matchDe) {
+      cuotaActual = parseInt(matchDe[1], 10);
+      cantidadCuotas = parseInt(matchDe[2], 10) || 1;
+    }
+  }
+
+  // 3. Patrones estándar 'X cuotas', 'X pagos' (ej: '2 cuotas de $25.000', 'hasta 2 cuotas', 'en 2 cuotas')
+  if (cantidadCuotas === 1) {
+    const matchStandard = cuotasText.match(/(\d+)\s*(?:cuotas?|pagos?)/i);
+    if (matchStandard) {
+      cantidadCuotas = parseInt(matchStandard[1], 10) || 1;
+    }
+  }
+
+  // 4. Patrones invertidos (ej: 'cuotas: 2', 'cuota 2', 'cuotas 2')
+  if (cantidadCuotas === 1) {
+    const matchInvertido = cuotasText.match(/(?:cuotas?|pagos?)\s*[:=]?\s*(\d+)/i);
+    if (matchInvertido) {
+      cantidadCuotas = parseInt(matchInvertido[1], 10) || 1;
+    }
+  }
+
+  // 5. Patrones multiplicador (ej: '2x', '2 x $25.000')
+  if (cantidadCuotas === 1) {
     const matchSimple = cuotasText.match(/^(\d+)\s*x/i);
     if (matchSimple) {
       cantidadCuotas = parseInt(matchSimple[1], 10) || 1;
     }
   }
 
+  // 6. Texto en palabras (ej: 'dos cuotas', 'tres cuotas')
+  if (cantidadCuotas === 1 && /dos\s+cuotas/i.test(cuotasText)) {
+    cantidadCuotas = 2;
+  }
+  if (cantidadCuotas === 1 && /tres\s+cuotas/i.test(cuotasText)) {
+    cantidadCuotas = 3;
+  }
+
+  // 7. Dígito único puro (ej: '2', '3')
+  if (cantidadCuotas === 1 && /^\s*2\s*$/.test(cuotasText)) {
+    cantidadCuotas = 2;
+  }
+  if (cantidadCuotas === 1 && /^\s*3\s*$/.test(cuotasText)) {
+    cantidadCuotas = 3;
+  }
+
+  // Monto por cuota: extraer monto explícito con signo $ o calcularlo del total oficial
   let montoPorCuota = 0;
   const matchMonto = cuotasText.match(/\$\s*([\d\.]+)/);
   if (matchMonto) {
@@ -600,21 +650,34 @@ function parseCuotasInfo(order) {
   }
 
   // Precios oficiales Click Agro:
-  // Agenda Digital: $50.000 en 1 pago o 2 pagos de $25.000
-  // Agenda Física: $150.000 en 1 pago o 3 pagos de $50.000
+  // Agenda Digital: $50.000 (1 pago de $50.000 o 2 pagos de $25.000)
+  // Agenda Física: $150.000 (1 pago de $150.000 o 3 pagos de $50.000 / 2 de $75.000)
   if (montoPorCuota === 0) {
-    const esFisica = order.tipo === 'fisica' || Boolean(order.direccion || order.cp || order.dni);
     if (esFisica) {
-      montoPorCuota = cantidadCuotas > 1 ? 50000 : 150000;
+      montoPorCuota = cantidadCuotas > 1 ? Math.round(150000 / cantidadCuotas) : 150000;
     } else {
       montoPorCuota = cantidadCuotas > 1 ? 25000 : 50000;
     }
+  }
+
+  // Formato prolijo para títulos y badges en el panel administrativo
+  let textoFormateado = cuotasText;
+  if (cantidadCuotas > 1) {
+    textoFormateado = `${cantidadCuotas} cuotas de $${montoPorCuota.toLocaleString('es-AR')}`;
+    if (cuotaActual && !cuotasText.includes('$')) {
+      textoFormateado += ` (${cuotasText})`;
+    }
+  } else if (cuotasText.toLowerCase().includes('1 pago') || cuotasText.toLowerCase().includes('pago único')) {
+    const valorUnico = esFisica ? 150000 : 50000;
+    textoFormateado = `1 pago de $${valorUnico.toLocaleString('es-AR')}`;
   }
 
   return {
     cantidadCuotas,
     montoPorCuota,
     textoOriginal: cuotasText,
+    textoFormateado,
+    cuotaActual,
     montoTotal: montoTotal || (cantidadCuotas * montoPorCuota)
   };
 }
@@ -686,6 +749,12 @@ function getOrderCuotasPagadas(orderId, order = null) {
     if (raw) return JSON.parse(raw);
   } catch (e) {}
 
+  if (!order && orderId) {
+    const fisicas = typeof getPhysicalOrders === 'function' ? getPhysicalOrders() : [];
+    const digitales = typeof getDigitalOrders === 'function' ? getDigitalOrders() : [];
+    order = fisicas.find(o => o.id === orderId) || digitales.find(o => o.id === orderId) || null;
+  }
+
   if (order && Array.isArray(order.cuotasPagadas)) {
     return order.cuotasPagadas;
   }
@@ -696,6 +765,17 @@ function getOrderCuotasPagadas(orderId, order = null) {
     const todas = [];
     for (let i = 1; i <= info.cantidadCuotas; i++) todas.push(i);
     return todas;
+  }
+
+  // Si el pedido tiene estado 'Pago Parcial' y no hay registro previo en localStorage:
+  if (order && (order.estadoPago === 'Pago Parcial' || order.estado_pago === 'Pago Parcial')) {
+    const info = parseCuotasInfo(order);
+    if (info.cuotaActual && info.cuotaActual <= info.cantidadCuotas) {
+      const pag = [];
+      for (let i = 1; i <= info.cuotaActual; i++) pag.push(i);
+      return pag;
+    }
+    return [1];
   }
 
   return [];
