@@ -1687,6 +1687,7 @@
                 <th style="width: 44px; text-align: center;" title="Eliminar"></th>
                 <th>Fecha / ID</th>
                 <th>Nombre</th>
+                <th>Teléfono</th>
                 <th>Email</th>
                 <th>Plan / Cuotas</th>
                 <th>Envío</th>
@@ -2365,6 +2366,9 @@
 
       emptyState.style.display = 'none';
       tbody.innerHTML = orders.map(order => {
+        const telSanitized = (order.tel || order.telefono || '').replace(/\D/g, '');
+        const wspUrl = `https://wa.me/${telSanitized.startsWith('54') ? telSanitized : '549' + telSanitized}?text=Hola%20${encodeURIComponent(order.nombre)}!%20Te%20escribimos%20de%20Click%20Agro%20por%20tu%20Agenda%20Agro%202027%20(Edici%C3%B3n%20Digital).`;
+
         return `
           <tr id="row-${order.id}">
             <td style="text-align: center; width: 44px; vertical-align: middle;">
@@ -2383,6 +2387,12 @@
             </td>
             <td class="buyer-info">
               <strong>${escapeHtml(order.nombre)}</strong>
+            </td>
+            <td>
+              <div class="contact-cell">
+                <span>${escapeHtml(order.tel || order.telefono || '-')}</span>
+                ${(order.tel || order.telefono) ? `<a class="btn-wsp-direct" href="${wspUrl}" target="_blank">📲 WhatsApp</a>` : ''}
+              </div>
             </td>
             <td>
               <div style="display: flex; align-items: center; gap: 6px;">

@@ -188,12 +188,14 @@ function mapFisicaToDb(order) {
 }
 
 function mapDigitalFromDb(row) {
+  const telValue = row.tel || row.telefono || '';
   return {
     id: row.id,
     fecha: row.fecha || '',
     nombre: row.nombre || '',
     email: row.email || '',
-    tel: row.tel || '',
+    tel: telValue,
+    telefono: telValue,
     cuotas: row.cuotas || '1 pago de $50.000',
     monto: Number(row.monto) || 50000,
     estadoPago: row.estado_pago || row.estadoPago || 'Registrado',
